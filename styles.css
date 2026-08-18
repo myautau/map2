@@ -120,7 +120,8 @@ button { font: inherit; }
 .node-group .node-label { transition: opacity 140ms ease, font-weight 140ms ease; user-select: none; }
 .node-group:hover .node-dot, .node-group.is-active .node-dot { r: 7px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
 .node-group:hover .node-label, .node-group.is-active .node-label { font-weight: 600; }
-#graph.has-focus .node-group:not(.is-connected):not(.is-active) { opacity: .22; }
+#graph.has-focus .node-group:not(.is-connected):not(.is-active) .node-dot { opacity: .22; }
+#graph.has-focus .node-group:not(.is-connected):not(.is-active) .node-label { opacity: 1; }
 #graph.has-focus .edge:not(.is-connected) { opacity: .08; }
 #graph.has-focus .edge.is-connected { opacity: .65; stroke-width: 1; }
 
