@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Карта экосистемы — Газпром нефть</title>
+  <link rel="stylesheet" href="styles.css?v=4" />
+</head>
+<body>
+  <main class="app-shell" aria-label="Карта экосистемы Газпром нефти">
+    <aside class="sidebar" aria-label="Иерархия компаний и направлений">
+      <div id="tree" class="tree"></div>
+    </aside>
+    <section class="graph-panel" aria-label="Граф связей">
+      <svg id="graph" viewBox="0 0 1162 960" role="img" aria-label="Карта связей компаний и функций"></svg>
+      <div id="tooltip" class="tooltip" role="status"></div>
+      <div class="map-controls" aria-label="Масштаб карты">
+        <button id="zoom-in" type="button" aria-label="Увеличить масштаб"><img src="assets/zoom-plus.svg" alt="" /></button>
+        <button id="zoom-out" type="button" aria-label="Уменьшить масштаб"><span class="zoom-minus"></span></button>
+      </div>
+      <aside id="detail-panel" class="detail-panel" aria-hidden="true" aria-label="Карточка бренда">
+        <div class="detail-scroll">
+          <div class="detail-heading">
+            <h2 id="detail-title" class="detail-title"></h2>
+            <button id="detail-close" class="detail-close" type="button" aria-label="Закрыть карточку"><img src="assets/close.svg" alt="" /></button>
+          </div>
+          <div class="detail-logo-frame">
+            <img id="detail-logo-image" class="detail-logo-image" alt="" />
+            <div id="detail-logo-text" class="detail-logo-text"></div>
+          </div>
+          <div class="detail-description-wrap">
+            <p id="detail-description" class="detail-description"></p>
+            <button id="detail-expand" class="detail-expand" type="button">Показать все</button>
+          </div>
+          <div class="detail-fields">
+            <div class="detail-field"><span>Материнский бренд</span><strong id="detail-parent"></strong></div>
+            <div class="detail-field"><span>Товарные знаки</span><strong id="detail-trademarks"></strong></div>
+            <div class="detail-field"><span>Категория объекта</span><strong id="detail-category"></strong></div>
+            <div class="detail-field"><span>Владелец бренда</span><strong id="detail-owner"></strong></div>
+            <div class="detail-field"><span>Тип бренда</span><strong id="detail-type"></strong></div>
+            <div class="detail-field"><span>География присутствия</span><strong id="detail-geography"></strong></div>
+            <div class="detail-field"><span>ЕОЛ</span><strong id="detail-eol"></strong></div>
+          </div>
+        </div>
+        <div class="detail-footer"><button type="button">Подробнее</button></div>
+      </aside>
+    </section>
+  </main>
+  <script src="app.js?v=7"></script>
+</body>
+</html>
