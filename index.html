@@ -4,16 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Карта экосистемы — Газпром нефть</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=12" />
 </head>
 <body>
   <main class="app-shell" aria-label="Карта экосистемы Газпром нефти">
     <aside class="sidebar" aria-label="Иерархия компаний и направлений">
+      <div class="brand-search">
+        <div class="brand-search-field">
+          <svg aria-hidden="true" viewBox="0 0 16 16"><path d="m13.8 13.8-3.1-3.1m1.42-4.16a5.58 5.58 0 1 1-11.16 0 5.58 5.58 0 0 1 11.16 0Z" /></svg>
+          <input id="brand-search-input" type="search" placeholder="Поиск по брендам" aria-label="Поиск по брендам" autocomplete="off" aria-autocomplete="list" aria-controls="brand-search-results" />
+          <button id="brand-search-clear" class="brand-search-clear" type="button" aria-label="Очистить поиск" hidden><img src="assets/close.svg" alt="" /></button>
+        </div>
+        <div id="brand-search-results" class="brand-search-results" role="listbox" hidden></div>
+      </div>
       <div id="tree" class="tree"></div>
     </aside>
     <section class="graph-panel" aria-label="Граф связей">
       <svg id="graph" viewBox="0 0 1162 960" role="img" aria-label="Карта связей компаний и функций"></svg>
       <div id="tooltip" class="tooltip" role="status"></div>
+      <label class="semantic-zoom-control">
+        <input id="semantic-zoom-toggle" type="checkbox" />
+        <span class="semantic-zoom-checkbox" aria-hidden="true"></span>
+        <span>Скрывать бренды при отдалении</span>
+      </label>
       <div class="map-controls" aria-label="Масштаб карты">
         <button id="zoom-in" type="button" aria-label="Увеличить масштаб"><img src="assets/zoom-plus.svg" alt="" /></button>
         <button id="zoom-out" type="button" aria-label="Уменьшить масштаб"><span class="zoom-minus"></span></button>
@@ -46,6 +59,6 @@
       </aside>
     </section>
   </main>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>

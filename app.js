@@ -164,22 +164,16 @@ const clusters = [
   }
 ];
 
-const treeData = [{
-  label: 'Газпром нефть',
-  color: palette.root,
-  open: true,
-  graphId: 'root',
-  children: clusters.map(cluster => ({
-    label: cluster.short,
+const treeData = clusters.map(cluster => ({
+  label: cluster.short,
+  color: cluster.color,
+  graphId: cluster.id,
+  children: cluster.groups.map(group => ({
+    label: group.label,
     color: cluster.color,
-    graphId: cluster.id,
-    children: cluster.groups.map(group => ({
-      label: group.label,
-      color: cluster.color,
-      children: group.brands.map(brand => brandToTreeNode(brand, cluster.color))
-    }))
+    children: group.brands.map(brand => brandToTreeNode(brand, cluster.color))
   }))
-}];
+}));
 
 function brandToTreeNode(brand, color) {
   if (typeof brand === 'string') return { label: brand, color, brandLabel: brand };
@@ -204,6 +198,7 @@ function renderTree(items, parent) {
     row.dataset.clickable = String(Boolean(item.children || item.graphId || item.brandLabel));
     if (item.graphId) row.dataset.graphId = item.graphId;
     if (item.brandLabel) row.dataset.brandLabel = item.brandLabel;
+    row.title = item.label;
     row.innerHTML = `<span class="chevron ${item.children ? '' : 'is-empty'}"></span><span class="tree-dot" style="--dot:${item.color || '#8ca2b3'}"></span><span class="tree-label">${item.label}</span>`;
 
     row.addEventListener('click', () => {
@@ -415,9 +410,151 @@ function getRingCounts(total) {
 
 clusters.forEach(addClusterNodes);
 
+function getStableBrandScore(label) {
+  return [...label].reduce((score, character, index) => score + character.charCodeAt(0) * (index + 1), 0) % 10000;
+}
+
+function assignBrandVisibilityTiers() {
+  const brandNodes = nodes.filter(node => node.clusterId);
+  const rankedBrands = [...brandNodes].sort((first, second) => {
+    const firstImportance = (first.isParentBrand ? 1000000 : 0) + (!first.parentId ? 100000 : 0) + getStableBrandScore(first.label);
+    const secondImportance = (second.isParentBrand ? 1000000 : 0) + (!second.parentId ? 100000 : 0) + getStableBrandScore(second.label);
+    return secondImportance - firstImportance;
+  });
+  const overviewCount = Math.ceil(rankedBrands.length * .7);
+  const mediumCount = Math.ceil(rankedBrands.length * .15);
+
+  rankedBrands.forEach((node, index) => {
+    node.visibilityTier = index < overviewCount ? 0 : index < overviewCount + mediumCount ? 1 : 2;
+  });
+}
+
+assignBrandVisibilityTiers();
+
 const svg = document.getElementById('graph');
 const namespace = 'http://www.w3.org/2000/svg';
 const nodeById = new Map(nodes.map(node => [node.id, node]));
+const semanticZoomToggle = document.getElementById('semantic-zoom-toggle');
+
+const brandSearchInput = document.getElementById('brand-search-input');
+const brandSearchClear = document.getElementById('brand-search-clear');
+const brandSearchResults = document.getElementById('brand-search-results');
+const searchableBrands = nodes
+  .filter(node => node.clusterId)
+  .sort((first, second) => first.label.localeCompare(second.label, 'ru'));
+let currentSearchIndex = -1;
+let visibleSearchResults = [];
+
+function normalizeSearchValue(value) {
+  return value.toLocaleLowerCase('ru').replaceAll('ё', 'е').trim();
+}
+
+function closeSearchResults() {
+  brandSearchResults.hidden = true;
+  brandSearchResults.replaceChildren();
+  brandSearchInput.removeAttribute('aria-activedescendant');
+  currentSearchIndex = -1;
+  visibleSearchResults = [];
+}
+
+function selectSearchResult(node) {
+  brandSearchInput.value = node.label;
+  brandSearchClear.hidden = false;
+  closeSearchResults();
+  setFocus(getNodeFocusId(node), true);
+  zoomToNode(node);
+  openDetailPanel(node);
+}
+
+function setCurrentSearchResult(index) {
+  const resultButtons = [...brandSearchResults.querySelectorAll('.brand-search-result')];
+  if (!resultButtons.length) return;
+  currentSearchIndex = (index + resultButtons.length) % resultButtons.length;
+  resultButtons.forEach((button, buttonIndex) => {
+    const isCurrent = buttonIndex === currentSearchIndex;
+    button.classList.toggle('is-current', isCurrent);
+    button.setAttribute('aria-selected', String(isCurrent));
+  });
+  const currentButton = resultButtons[currentSearchIndex];
+  brandSearchInput.setAttribute('aria-activedescendant', currentButton.id);
+  currentButton.scrollIntoView({ block: 'nearest' });
+}
+
+function renderSearchResults() {
+  const query = normalizeSearchValue(brandSearchInput.value);
+  brandSearchClear.hidden = !brandSearchInput.value;
+  if (!query) {
+    closeSearchResults();
+    return;
+  }
+
+  visibleSearchResults = searchableBrands
+    .filter(node => normalizeSearchValue(node.label).includes(query))
+    .sort((first, second) => {
+      const firstStarts = normalizeSearchValue(first.label).startsWith(query);
+      const secondStarts = normalizeSearchValue(second.label).startsWith(query);
+      return Number(secondStarts) - Number(firstStarts) || first.label.localeCompare(second.label, 'ru');
+    })
+    .slice(0, 12);
+
+  brandSearchResults.replaceChildren();
+  currentSearchIndex = -1;
+  brandSearchInput.removeAttribute('aria-activedescendant');
+
+  if (!visibleSearchResults.length) {
+    const empty = document.createElement('div');
+    empty.className = 'brand-search-empty';
+    empty.textContent = 'Бренды не найдены';
+    brandSearchResults.appendChild(empty);
+  } else {
+    visibleSearchResults.forEach((node, index) => {
+      const button = document.createElement('button');
+      button.id = `brand-search-result-${index}`;
+      button.className = 'brand-search-result';
+      button.type = 'button';
+      button.setAttribute('role', 'option');
+      button.setAttribute('aria-selected', 'false');
+
+      const dot = document.createElement('span');
+      dot.className = 'brand-search-result-dot';
+      dot.style.setProperty('--dot', node.color);
+      const label = document.createElement('span');
+      label.textContent = node.label;
+      button.append(dot, label);
+      button.addEventListener('mousedown', event => event.preventDefault());
+      button.addEventListener('click', () => selectSearchResult(node));
+      brandSearchResults.appendChild(button);
+    });
+  }
+
+  brandSearchResults.hidden = false;
+}
+
+brandSearchInput.addEventListener('input', renderSearchResults);
+brandSearchInput.addEventListener('focus', renderSearchResults);
+brandSearchInput.addEventListener('keydown', event => {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    if (!visibleSearchResults.length) return;
+    event.preventDefault();
+    setCurrentSearchResult(currentSearchIndex + (event.key === 'ArrowDown' ? 1 : -1));
+  } else if (event.key === 'Enter' && visibleSearchResults.length) {
+    event.preventDefault();
+    selectSearchResult(visibleSearchResults[currentSearchIndex >= 0 ? currentSearchIndex : 0]);
+  } else if (event.key === 'Escape') {
+    const resultsWereOpen = !brandSearchResults.hidden;
+    closeSearchResults();
+    if (resultsWereOpen) event.stopPropagation();
+  }
+});
+brandSearchClear.addEventListener('click', () => {
+  brandSearchInput.value = '';
+  brandSearchClear.hidden = true;
+  closeSearchResults();
+  brandSearchInput.focus();
+});
+document.addEventListener('pointerdown', event => {
+  if (!event.target.closest('.brand-search')) closeSearchResults();
+});
 
 function createSvgElement(tag, attributes = {}) {
   const element = document.createElementNS(namespace, tag);
@@ -469,6 +606,8 @@ edges.forEach((edge, index) => {
   line.dataset.source = edge.source;
   line.dataset.target = edge.target;
   line.dataset.index = index;
+  const targetVisibilityTier = nodeById.get(edge.target)?.visibilityTier;
+  if (targetVisibilityTier !== undefined) line.dataset.visibilityTier = targetVisibilityTier;
   edgeLayer.appendChild(line);
 });
 svg.appendChild(edgeLayer);
@@ -477,7 +616,10 @@ const nodeLayer = createSvgElement('g', { class: 'node-layer' });
 nodes.forEach(node => {
   const group = createSvgElement('g', { class: 'node-group', tabindex: '0', role: 'button', 'aria-label': node.label });
   group.dataset.id = node.id;
+  if (node.visibilityTier !== undefined) group.dataset.visibilityTier = node.visibilityTier;
+  const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
   const circle = createSvgElement('circle', { class: 'node-dot', cx: node.x, cy: node.y, r: node.r, fill: node.color });
+  group.appendChild(hitArea);
   group.appendChild(circle);
   addWrappedLabel(group, node);
   nodeLayer.appendChild(group);
@@ -504,7 +646,7 @@ nodes.forEach(node => {
   });
 });
 svg.appendChild(nodeLayer);
-resolveLabelCollisions();
+document.fonts.ready.then(resolveLabelCollisions);
 
 function resolveLabelCollisions() {
   const padding = 3;
@@ -562,8 +704,18 @@ function resolveLabelCollisions() {
       height: item.box.height
     };
     placed.push({ x: resolved.x, y: resolved.y, width: resolved.width, height: resolved.height });
-    item.label.setAttribute('transform', `translate(${resolved.shiftX.toFixed(2)} ${resolved.shiftY.toFixed(2)})`);
+    const collisionTransform = `translate(${resolved.shiftX.toFixed(2)} ${resolved.shiftY.toFixed(2)})`;
+    item.label.dataset.collisionTransform = collisionTransform;
+    item.label.setAttribute('transform', collisionTransform);
+    if (item.label.parentElement.classList.contains('is-active')) item.label.removeAttribute('transform');
   });
+}
+
+function restoreLabelPosition(group) {
+  const label = group.querySelector('.node-label');
+  if (!label) return;
+  if (group.classList.contains('is-active')) label.removeAttribute('transform');
+  else if (label.dataset.collisionTransform) label.setAttribute('transform', label.dataset.collisionTransform);
 }
 
 function getNodeFocusId(node) {
@@ -593,8 +745,9 @@ function navigateToNode(node) {
     return;
   }
 
-  zoomToNode(node, 1.55);
   closeDetailPanel();
+  setFocus(node.id, true);
+  zoomToNode(node, 1.55);
 }
 
 function zoomToNode(node, zoom = 2.2) {
@@ -617,6 +770,26 @@ function zoomBy(multiplier) {
   const centerX = currentViewBox.x + currentViewBox.width / 2;
   const centerY = currentViewBox.y + currentViewBox.height / 2;
   animateViewBox(constrainViewBox({ x: centerX - width / 2, y: centerY - height / 2, width, height }));
+}
+
+function zoomAtPoint(clientX, clientY, multiplier) {
+  const rect = svg.getBoundingClientRect();
+  const ratioX = (clientX - rect.left) / rect.width;
+  const ratioY = (clientY - rect.top) / rect.height;
+  const anchorX = currentViewBox.x + currentViewBox.width * ratioX;
+  const anchorY = currentViewBox.y + currentViewBox.height * ratioY;
+  const currentZoom = baseViewBox.width / currentViewBox.width;
+  const nextZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom * multiplier));
+  const width = baseViewBox.width / nextZoom;
+  const height = baseViewBox.height / nextZoom;
+  currentViewBox = constrainViewBox({
+    x: anchorX - width * ratioX,
+    y: anchorY - height * ratioY,
+    width,
+    height
+  });
+  svg.setAttribute('viewBox', `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
+  updateZoomButtons();
 }
 
 function resetZoom() {
@@ -658,17 +831,88 @@ function updateZoomButtons() {
   const zoom = baseViewBox.width / currentViewBox.width;
   document.getElementById('zoom-out').disabled = zoom <= minZoom + .01;
   document.getElementById('zoom-in').disabled = zoom >= maxZoom - .01;
+  updateBrandVisibility(zoom);
+}
+
+function updateBrandVisibility(zoom) {
+  const visibleTier = !semanticZoomToggle.checked ? 2 : zoom >= 1.8 ? 2 : zoom >= 1.3 ? 1 : 0;
+
+  document.querySelectorAll('.node-group[data-visibility-tier]').forEach(group => {
+    const isSelected = group.classList.contains('is-active');
+    group.classList.toggle('is-zoom-hidden', Number(group.dataset.visibilityTier) > visibleTier && !isSelected);
+  });
+
+  document.querySelectorAll('.edge[data-visibility-tier]').forEach(edge => {
+    const targetGroup = document.querySelector(`.node-group[data-id="${edge.dataset.target}"]`);
+    const isSelected = targetGroup?.classList.contains('is-active');
+    edge.classList.toggle('is-zoom-hidden', Number(edge.dataset.visibilityTier) > visibleTier && !isSelected);
+  });
 }
 
 document.getElementById('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
 document.getElementById('zoom-in').addEventListener('click', () => zoomBy(1.35));
+semanticZoomToggle.addEventListener('change', () => updateBrandVisibility(baseViewBox.width / currentViewBox.width));
 updateZoomButtons();
+
+let panState = null;
+let suppressNodeClick = false;
+
+svg.addEventListener('pointerdown', event => {
+  if (event.button !== 0) return;
+  if (event.target.closest('.node-group')) return;
+  if (viewBoxAnimation) cancelAnimationFrame(viewBoxAnimation);
+  viewBoxAnimation = null;
+  panState = {
+    pointerId: event.pointerId,
+    clientX: event.clientX,
+    clientY: event.clientY,
+    viewBox: { ...currentViewBox },
+    moved: false
+  };
+});
+
+svg.addEventListener('pointermove', event => {
+  if (!panState || event.pointerId !== panState.pointerId) return;
+  const deltaX = event.clientX - panState.clientX;
+  const deltaY = event.clientY - panState.clientY;
+  if (!panState.moved && Math.hypot(deltaX, deltaY) < 4) return;
+  if (!panState.moved) svg.setPointerCapture(event.pointerId);
+  panState.moved = true;
+  suppressNodeClick = true;
+  svg.classList.add('is-panning');
+  const rect = svg.getBoundingClientRect();
+  currentViewBox = constrainViewBox({
+    ...panState.viewBox,
+    x: panState.viewBox.x - deltaX * panState.viewBox.width / rect.width,
+    y: panState.viewBox.y - deltaY * panState.viewBox.height / rect.height
+  });
+  svg.setAttribute('viewBox', `${currentViewBox.x} ${currentViewBox.y} ${currentViewBox.width} ${currentViewBox.height}`);
+  event.preventDefault();
+});
+
+const finishPan = event => {
+  if (!panState || event.pointerId !== panState.pointerId) return;
+  const moved = panState.moved;
+  panState = null;
+  svg.classList.remove('is-panning');
+  if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+  if (moved) setTimeout(() => { suppressNodeClick = false; }, 0);
+};
+
+svg.addEventListener('pointerup', finishPan);
+svg.addEventListener('pointercancel', finishPan);
+svg.addEventListener('wheel', event => {
+  event.preventDefault();
+  if (viewBoxAnimation) cancelAnimationFrame(viewBoxAnimation);
+  viewBoxAnimation = null;
+  zoomAtPoint(event.clientX, event.clientY, Math.exp(-event.deltaY * .0015));
+}, { passive: false });
 
 let pinnedId = null;
 
 function setFocus(id, pin) {
   if (pin) pinnedId = id;
-  const focusId = pin ? pinnedId : id;
+  const focusId = pin ? pinnedId : pinnedId || id;
   if (!focusId) return clearFocus();
 
   svg.classList.add('has-focus');
@@ -680,17 +924,21 @@ function setFocus(id, pin) {
     );
     group.classList.toggle('is-active', group.dataset.id === focusId);
     group.classList.toggle('is-connected', connected);
+    restoreLabelPosition(group);
   });
   document.querySelectorAll('.edge').forEach(line => {
     const targetNode = nodeById.get(line.dataset.target);
     line.classList.toggle('is-connected', line.dataset.source === focusId || line.dataset.target === focusId || targetNode?.clusterId === focusId);
   });
   document.querySelectorAll('.tree-row').forEach(row => row.classList.toggle('is-active', row.dataset.graphId === focusId));
+  updateBrandVisibility(baseViewBox.width / currentViewBox.width);
 }
 
 function clearFocus() {
   svg.classList.remove('has-focus');
   document.querySelectorAll('.is-active,.is-connected').forEach(element => element.classList.remove('is-active', 'is-connected'));
+  document.querySelectorAll('.node-group').forEach(restoreLabelPosition);
+  updateBrandVisibility(baseViewBox.width / currentViewBox.width);
 }
 
 const tooltip = document.getElementById('tooltip');
@@ -913,5 +1161,6 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeDetailPanel();
 });
 svg.addEventListener('click', event => {
+  if (suppressNodeClick) return;
   if (event.target === svg) closeDetailPanel();
 });
