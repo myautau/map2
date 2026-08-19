@@ -185,7 +185,7 @@ function brandToTreeNode(brand, color) {
   };
 }
 
-function renderTree(items, parent) {
+function renderTree(items, parent, depth = 0) {
   const list = document.createElement('ul');
   list.className = 'tree-list';
 
@@ -195,6 +195,7 @@ function renderTree(items, parent) {
     const row = document.createElement('button');
     row.className = 'tree-row';
     row.type = 'button';
+    row.style.paddingLeft = `${8 + depth * 16}px`;
     row.dataset.clickable = String(Boolean(item.children || item.graphId || item.brandLabel));
     if (item.graphId) row.dataset.graphId = item.graphId;
     if (item.brandLabel) row.dataset.brandLabel = item.brandLabel;
@@ -230,7 +231,7 @@ function renderTree(items, parent) {
     if (item.children) {
       const children = document.createElement('div');
       children.className = 'tree-children';
-      renderTree(item.children, children);
+      renderTree(item.children, children, depth + 1);
       entry.appendChild(children);
     }
     list.appendChild(entry);
@@ -665,6 +666,7 @@ nodes.forEach(node => {
   if (node.visibilityTier !== undefined) group.dataset.visibilityTier = node.visibilityTier;
   const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
   const circle = createSvgElement('circle', { class: 'node-dot', cx: node.x, cy: node.y, r: node.r, fill: node.color });
+  circle.style.setProperty('--node-hover-radius', `${Math.max(7, node.r + 2)}px`);
   group.appendChild(hitArea);
   group.appendChild(circle);
   addWrappedLabel(group, node);
