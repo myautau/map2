@@ -185,7 +185,7 @@ function brandToTreeNode(brand, color) {
   };
 }
 
-function renderTree(items, parent) {
+function renderTree(items, parent, depth = 0) {
   const list = document.createElement('ul');
   list.className = 'tree-list';
 
@@ -195,6 +195,7 @@ function renderTree(items, parent) {
     const row = document.createElement('button');
     row.className = 'tree-row';
     row.type = 'button';
+    row.style.paddingLeft = `${8 + depth * 16}px`;
     row.dataset.clickable = String(Boolean(item.children || item.graphId || item.brandLabel));
     if (item.graphId) row.dataset.graphId = item.graphId;
     if (item.brandLabel) row.dataset.brandLabel = item.brandLabel;
@@ -230,7 +231,7 @@ function renderTree(items, parent) {
     if (item.children) {
       const children = document.createElement('div');
       children.className = 'tree-children';
-      renderTree(item.children, children);
+      renderTree(item.children, children, depth + 1);
       entry.appendChild(children);
     }
     list.appendChild(entry);
@@ -414,18 +415,63 @@ function getStableBrandScore(label) {
   return [...label].reduce((score, character, index) => score + character.charCodeAt(0) * (index + 1), 0) % 10000;
 }
 
+function allocateClusterQuotas(clusterBrands, ratio, targetTotal) {
+  const quotas = new Map();
+  const remainders = [];
+
+  clusterBrands.forEach((brands, clusterId) => {
+    const ideal = brands.length * ratio;
+    const quota = Math.min(brands.length, Math.max(1, Math.floor(ideal)));
+    quotas.set(clusterId, quota);
+    remainders.push({ clusterId, remainder: ideal - Math.floor(ideal), capacity: brands.length });
+  });
+
+  let assigned = [...quotas.values()].reduce((total, quota) => total + quota, 0);
+  remainders.sort((first, second) => second.remainder - first.remainder);
+
+  for (const candidate of remainders) {
+    if (assigned >= targetTotal) break;
+    if (quotas.get(candidate.clusterId) >= candidate.capacity) continue;
+    quotas.set(candidate.clusterId, quotas.get(candidate.clusterId) + 1);
+    assigned += 1;
+  }
+
+  if (assigned > targetTotal) {
+    remainders.sort((first, second) => first.remainder - second.remainder);
+    for (const candidate of remainders) {
+      if (assigned <= targetTotal) break;
+      if (quotas.get(candidate.clusterId) <= 1) continue;
+      quotas.set(candidate.clusterId, quotas.get(candidate.clusterId) - 1);
+      assigned -= 1;
+    }
+  }
+
+  return quotas;
+}
+
 function assignBrandVisibilityTiers() {
   const brandNodes = nodes.filter(node => node.clusterId);
-  const rankedBrands = [...brandNodes].sort((first, second) => {
-    const firstImportance = (first.isParentBrand ? 1000000 : 0) + (!first.parentId ? 100000 : 0) + getStableBrandScore(first.label);
-    const secondImportance = (second.isParentBrand ? 1000000 : 0) + (!second.parentId ? 100000 : 0) + getStableBrandScore(second.label);
-    return secondImportance - firstImportance;
+  const clusterBrands = new Map();
+  brandNodes.forEach(node => {
+    if (!clusterBrands.has(node.clusterId)) clusterBrands.set(node.clusterId, []);
+    clusterBrands.get(node.clusterId).push(node);
   });
-  const overviewCount = Math.ceil(rankedBrands.length * .7);
-  const mediumCount = Math.ceil(rankedBrands.length * .15);
 
-  rankedBrands.forEach((node, index) => {
-    node.visibilityTier = index < overviewCount ? 0 : index < overviewCount + mediumCount ? 1 : 2;
+  const overviewQuotas = allocateClusterQuotas(clusterBrands, .7, Math.ceil(brandNodes.length * .7));
+  const mediumQuotas = allocateClusterQuotas(clusterBrands, .85, Math.ceil(brandNodes.length * .85));
+
+  clusterBrands.forEach((brands, clusterId) => {
+    const rankedBrands = [...brands].sort((first, second) => {
+      const firstImportance = (first.isParentBrand ? 1000000 : 0) + (!first.parentId ? 100000 : 0) + getStableBrandScore(first.label);
+      const secondImportance = (second.isParentBrand ? 1000000 : 0) + (!second.parentId ? 100000 : 0) + getStableBrandScore(second.label);
+      return secondImportance - firstImportance;
+    });
+    const overviewCount = overviewQuotas.get(clusterId);
+    const mediumCount = mediumQuotas.get(clusterId);
+
+    rankedBrands.forEach((node, index) => {
+      node.visibilityTier = index < overviewCount ? 0 : index < mediumCount ? 1 : 2;
+    });
   });
 }
 
@@ -616,9 +662,11 @@ const nodeLayer = createSvgElement('g', { class: 'node-layer' });
 nodes.forEach(node => {
   const group = createSvgElement('g', { class: 'node-group', tabindex: '0', role: 'button', 'aria-label': node.label });
   group.dataset.id = node.id;
+  if (node.clusterId) group.dataset.clusterId = node.clusterId;
   if (node.visibilityTier !== undefined) group.dataset.visibilityTier = node.visibilityTier;
   const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
   const circle = createSvgElement('circle', { class: 'node-dot', cx: node.x, cy: node.y, r: node.r, fill: node.color });
+  circle.style.setProperty('--node-hover-radius', `${Math.max(7, node.r + 2)}px`);
   group.appendChild(hitArea);
   group.appendChild(circle);
   addWrappedLabel(group, node);
@@ -1086,6 +1134,21 @@ function getBrandDescription(node, cluster) {
   return `«${node.label}» — бренд экосистемы «Газпром нефти». Он представляет отдельный продукт, проект или направление и связан с профильным блоком ${cluster?.short || 'компании'}.`;
 }
 
+function renderTrademarks(items) {
+  detailTrademarks.replaceChildren();
+  items.forEach((item, index) => {
+    if (index > 0) {
+      const dot = document.createElement('span');
+      dot.className = 'detail-trademark-dot';
+      dot.setAttribute('aria-hidden', 'true');
+      detailTrademarks.appendChild(dot);
+    }
+    const label = document.createElement('span');
+    label.textContent = item;
+    detailTrademarks.appendChild(label);
+  });
+}
+
 function openDetailPanel(node) {
   const cluster = clusters.find(item => item.id === node.clusterId);
   const parentNode = node.parentId ? nodeById.get(node.parentId) : null;
@@ -1097,7 +1160,7 @@ function openDetailPanel(node) {
   detailExpand.textContent = 'Показать все';
   detailExpand.hidden = true;
   detailParent.textContent = parentNode?.label || 'Газпром нефть';
-  detailTrademarks.textContent = node.label === 'G-Drive' ? 'G-Drive  •  Drive Café' : node.label;
+  renderTrademarks(node.label === 'G-Drive' ? ['G-Drive', 'Drive Café'] : [node.label]);
   detailCategory.textContent = node.parentId || node.isParentBrand ? 'Программа' : 'Бренд';
   detailOwner.textContent = cluster?.short || 'Газпром нефть';
   detailType.textContent = node.label === 'G-Drive' || node.isParentBrand ? 'Зонтичный' : 'Самостоятельный';
