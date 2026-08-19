@@ -719,10 +719,15 @@ function showHoverLogo(node) {
   const logoFile = brandLogoFiles[node.label];
   if (!logoFile) return false;
 
+  const isGazpromNeft = node.label === 'Газпром нефть';
   const cardX = Math.min(Math.max(node.x - 68, 4), 1022);
   const preferredY = node.y - node.r - 148;
   const cardY = preferredY >= 4 ? preferredY : node.y + node.r + 12;
   hoverLogoCard.setAttribute('transform', `translate(${cardX} ${cardY})`);
+  hoverLogoImage.setAttribute('x', isGazpromNeft ? '20.4' : '16');
+  hoverLogoImage.setAttribute('y', isGazpromNeft ? '40.3' : '16');
+  hoverLogoImage.setAttribute('width', isGazpromNeft ? '91.8' : '104');
+  hoverLogoImage.setAttribute('height', isGazpromNeft ? '44.9' : '104');
   hoverLogoImage.setAttribute('href', logoFile);
   hoverLogoCard.classList.add('is-visible');
   return true;
