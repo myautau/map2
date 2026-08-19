@@ -687,9 +687,10 @@ nodes.forEach(node => {
   nodeLayer.appendChild(group);
 
   group.addEventListener('mouseenter', event => {
-    setFocus(getNodeFocusId(node), false);
-    if (showHoverLogo(node)) hideTooltip();
+    const hasLogo = showHoverLogo(node);
+    if (hasLogo) hideTooltip();
     else showTooltip(event, node);
+    setFocus(getNodeFocusId(node), false);
   });
   group.addEventListener('mousemove', event => {
     if (!brandLogoFiles[node.label]) showTooltip(event, node);
@@ -721,14 +722,25 @@ function showHoverLogo(node) {
 
   const isGazpromNeft = node.label === 'Газпром нефть';
   const isCompactLogo = node.label === 'N1';
+  const logoSize = node.label === 'Вебнефть'
+    ? { x: 16, y: 59.9, width: 104, height: 16.1 }
+    : node.label === 'Корпоративный университет'
+      ? { x: 16, y: 53.2, width: 104, height: 29.5 }
+      : null;
   const cardX = Math.min(Math.max(node.x - 68, 4), 1022);
   const preferredY = node.y - node.r - 148;
   const cardY = preferredY >= 4 ? preferredY : node.y + node.r + 12;
   hoverLogoCard.setAttribute('transform', `translate(${cardX} ${cardY})`);
-  hoverLogoImage.setAttribute('x', isGazpromNeft ? '20.4' : isCompactLogo ? '28' : '16');
-  hoverLogoImage.setAttribute('y', isGazpromNeft ? '40.3' : isCompactLogo ? '28' : '16');
-  hoverLogoImage.setAttribute('width', isGazpromNeft ? '91.8' : isCompactLogo ? '80' : '104');
-  hoverLogoImage.setAttribute('height', isGazpromNeft ? '44.9' : isCompactLogo ? '80' : '104');
+  const defaultLogoSize = isGazpromNeft
+    ? { x: 20.4, y: 40.3, width: 91.8, height: 44.9 }
+    : isCompactLogo
+      ? { x: 28, y: 28, width: 80, height: 80 }
+      : { x: 16, y: 16, width: 104, height: 104 };
+  const imageSize = logoSize || defaultLogoSize;
+  hoverLogoImage.setAttribute('x', imageSize.x);
+  hoverLogoImage.setAttribute('y', imageSize.y);
+  hoverLogoImage.setAttribute('width', imageSize.width);
+  hoverLogoImage.setAttribute('height', imageSize.height);
   hoverLogoImage.setAttribute('href', logoFile);
   hoverLogoCard.classList.add('is-visible');
   return true;
@@ -1035,12 +1047,18 @@ function getFocusPathIds(focusId) {
 
 function getFocusSelectionIds(focusId) {
   const selectionIds = getFocusPathIds(focusId);
-  const isCluster = clusters.some(cluster => cluster.id === focusId);
-  if (!isCluster) return selectionIds;
+  const descendants = [focusId];
+  const visited = new Set(descendants);
 
-  nodes.forEach(node => {
-    if (node.clusterId === focusId) selectionIds.add(node.id);
-  });
+  while (descendants.length) {
+    const sourceId = descendants.shift();
+    edges.forEach(edge => {
+      if (edge.source !== sourceId || visited.has(edge.target)) return;
+      visited.add(edge.target);
+      selectionIds.add(edge.target);
+      descendants.push(edge.target);
+    });
+  }
 
   return selectionIds;
 }
@@ -1164,7 +1182,7 @@ const brandLogoFiles = {
   'G-Energy': 'assets/g-energy.png',
   'Drive Café': 'assets/drive-cafe.png',
   'SYNTOLUX': 'assets/syntolux.png',
-  'Вебнефть': 'assets/webneft.png',
+  'Вебнефть': 'assets/webneft.svg',
   'StartupDrive': 'assets/startup-drive.png',
   'G-Drive': 'assets/g-drive.png',
   'DDA': 'assets/dda.png',
@@ -1206,7 +1224,7 @@ const brandLogoFiles = {
   'Цифраториум': 'assets/ciferhaus.png',
   'G-Drive Арена': 'assets/g-drive-arena.png',
   'Экспертные решения': 'assets/expert-solutions.png',
-  'Корпоративный университет': 'assets/corporate-university.png',
+  'Корпоративный университет': 'assets/corporate-university.svg',
   'Promine': 'assets/promine.png'
 };
 
