@@ -958,25 +958,53 @@ svg.addEventListener('wheel', event => {
 
 let pinnedId = null;
 
+function getFocusPathIds(focusId) {
+  const adjacency = new Map();
+  edges.forEach(edge => {
+    if (!adjacency.has(edge.source)) adjacency.set(edge.source, []);
+    if (!adjacency.has(edge.target)) adjacency.set(edge.target, []);
+    adjacency.get(edge.source).push(edge.target);
+    adjacency.get(edge.target).push(edge.source);
+  });
+
+  const queue = ['root'];
+  const previous = new Map([['root', null]]);
+  while (queue.length) {
+    const currentId = queue.shift();
+    if (currentId === focusId) break;
+    (adjacency.get(currentId) || []).forEach(nextId => {
+      if (!previous.has(nextId)) {
+        previous.set(nextId, currentId);
+        queue.push(nextId);
+      }
+    });
+  }
+
+  if (!previous.has(focusId)) return new Set([focusId]);
+  const pathIds = new Set();
+  let currentId = focusId;
+  while (currentId) {
+    pathIds.add(currentId);
+    currentId = previous.get(currentId);
+  }
+  return pathIds;
+}
+
 function setFocus(id, pin) {
   if (pin) pinnedId = id;
   const focusId = pin ? pinnedId : pinnedId || id;
   if (!focusId) return clearFocus();
 
+  const focusPathIds = getFocusPathIds(focusId);
   svg.classList.add('has-focus');
   document.querySelectorAll('.node-group').forEach(group => {
-    const node = nodeById.get(group.dataset.id);
-    const connected = group.dataset.id === focusId || node?.clusterId === focusId || edges.some(edge =>
-      (edge.source === focusId && edge.target === group.dataset.id) ||
-      (edge.target === focusId && edge.source === group.dataset.id)
-    );
+    const connected = focusPathIds.has(group.dataset.id);
     group.classList.toggle('is-active', group.dataset.id === focusId);
     group.classList.toggle('is-connected', connected);
     restoreLabelPosition(group);
   });
   document.querySelectorAll('.edge').forEach(line => {
-    const targetNode = nodeById.get(line.dataset.target);
-    line.classList.toggle('is-connected', line.dataset.source === focusId || line.dataset.target === focusId || targetNode?.clusterId === focusId);
+    line.classList.toggle('is-connected', focusPathIds.has(line.dataset.source) && focusPathIds.has(line.dataset.target));
   });
   document.querySelectorAll('.tree-row').forEach(row => row.classList.toggle('is-active', row.dataset.graphId === focusId));
   updateBrandVisibility(baseViewBox.width / currentViewBox.width);
