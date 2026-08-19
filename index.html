@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Карта экосистемы — Газпром нефть</title>
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=31" />
 </head>
 <body>
   <main class="app-shell" aria-label="Карта экосистемы Газпром нефти">
@@ -45,20 +45,21 @@
             <p id="detail-description" class="detail-description"></p>
             <button id="detail-expand" class="detail-expand" type="button">Показать все</button>
           </div>
+          <div class="detail-divider" aria-hidden="true"></div>
           <div class="detail-fields">
             <div class="detail-field"><span>Материнский бренд</span><strong id="detail-parent"></strong></div>
+            <div id="detail-children-field" class="detail-field"><span>Дочерние бренды</span><strong id="detail-children" class="detail-link-list"></strong><button id="detail-children-expand" class="detail-expand" type="button">Показать все</button></div>
             <div class="detail-field"><span>Товарные знаки</span><strong id="detail-trademarks"></strong></div>
             <div class="detail-field"><span>Категория объекта</span><strong id="detail-category"></strong></div>
-            <div class="detail-field"><span>Владелец бренда</span><strong id="detail-owner"></strong></div>
-            <div class="detail-field"><span>Тип бренда</span><strong id="detail-type"></strong></div>
-            <div class="detail-field"><span>География присутствия</span><strong id="detail-geography"></strong></div>
-            <div class="detail-field"><span>ЕОЛ</span><strong id="detail-eol"></strong></div>
+            <div class="detail-field"><span>Аудитория</span><strong id="detail-audience"></strong></div>
+            <div class="detail-field detail-eol-field"><span>ЕОЛ</span><strong id="detail-eol"></strong></div>
+            <div class="detail-field"><span>Контакты</span><strong id="detail-contacts" class="detail-link-value"></strong></div>
           </div>
         </div>
         <div class="detail-footer"><button type="button">Подробнее</button></div>
       </aside>
     </section>
   </main>
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>

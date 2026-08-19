@@ -659,6 +659,20 @@ edges.forEach((edge, index) => {
 svg.appendChild(edgeLayer);
 
 const nodeLayer = createSvgElement('g', { class: 'node-layer' });
+const hoverLogoLayer = createSvgElement('g', { class: 'hover-logo-layer', 'aria-hidden': 'true' });
+const hoverLogoCard = createSvgElement('g', { class: 'hover-logo-card' });
+const hoverLogoSurface = createSvgElement('rect', { class: 'hover-logo-surface', width: 136, height: 136, rx: 4 });
+const hoverLogoImage = createSvgElement('image', {
+  class: 'hover-logo-image',
+  x: 16,
+  y: 16,
+  width: 104,
+  height: 104,
+  preserveAspectRatio: 'xMidYMid meet'
+});
+hoverLogoCard.appendChild(hoverLogoSurface);
+hoverLogoCard.appendChild(hoverLogoImage);
+hoverLogoLayer.appendChild(hoverLogoCard);
 nodes.forEach(node => {
   const group = createSvgElement('g', { class: 'node-group', tabindex: '0', role: 'button', 'aria-label': node.label });
   group.dataset.id = node.id;
@@ -674,10 +688,14 @@ nodes.forEach(node => {
 
   group.addEventListener('mouseenter', event => {
     setFocus(getNodeFocusId(node), false);
-    showTooltip(event, node);
+    if (showHoverLogo(node)) hideTooltip();
+    else showTooltip(event, node);
   });
-  group.addEventListener('mousemove', event => showTooltip(event, node));
+  group.addEventListener('mousemove', event => {
+    if (!brandLogoFiles[node.label]) showTooltip(event, node);
+  });
   group.addEventListener('mouseleave', () => {
+    hideHoverLogo();
     hideTooltip();
     if (!pinnedId) clearFocus();
   });
@@ -694,7 +712,26 @@ nodes.forEach(node => {
   });
 });
 svg.appendChild(nodeLayer);
+svg.appendChild(hoverLogoLayer);
 document.fonts.ready.then(resolveLabelCollisions);
+
+function showHoverLogo(node) {
+  const logoFile = brandLogoFiles[node.label];
+  if (!logoFile) return false;
+
+  const cardX = Math.min(Math.max(node.x - 68, 4), 1022);
+  const preferredY = node.y - node.r - 148;
+  const cardY = preferredY >= 4 ? preferredY : node.y + node.r + 12;
+  hoverLogoCard.setAttribute('transform', `translate(${cardX} ${cardY})`);
+  hoverLogoImage.setAttribute('href', logoFile);
+  hoverLogoCard.classList.add('is-visible');
+  return true;
+}
+
+function hideHoverLogo() {
+  hoverLogoCard.classList.remove('is-visible');
+  hoverLogoImage.removeAttribute('href');
+}
 
 function resolveLabelCollisions() {
   const padding = 3;
@@ -1041,12 +1078,14 @@ const detailTitle = document.getElementById('detail-title');
 const detailDescription = document.getElementById('detail-description');
 const detailExpand = document.getElementById('detail-expand');
 const detailParent = document.getElementById('detail-parent');
+const detailChildrenField = document.getElementById('detail-children-field');
+const detailChildren = document.getElementById('detail-children');
+const detailChildrenExpand = document.getElementById('detail-children-expand');
 const detailTrademarks = document.getElementById('detail-trademarks');
 const detailCategory = document.getElementById('detail-category');
-const detailOwner = document.getElementById('detail-owner');
-const detailType = document.getElementById('detail-type');
-const detailGeography = document.getElementById('detail-geography');
+const detailAudience = document.getElementById('detail-audience');
 const detailEol = document.getElementById('detail-eol');
+const detailContacts = document.getElementById('detail-contacts');
 
 const brandDescriptionOverrides = {
   'G-Drive': 'Премиальный бренд высокотехнологичного автомобильного топлива «Газпром нефти». Бренд ориентирован на водителей, которые ценят динамику, мощность и высокие эксплуатационные характеристики автомобиля.',
@@ -1058,7 +1097,7 @@ const brandDescriptionOverrides = {
   'SYNTOLUX': 'Бренд синтетических базовых масел, предназначенных для производства современных смазочных материалов с высокими эксплуатационными характеристиками.',
   'Вебнефть': 'Цифровой бренд «Газпром нефти», объединяющий технологические продукты и онлайн-сервисы для сотрудников, партнёров и бизнес-процессов компании.',
   'G-Lab': 'Инновационная платформа для разработки, проверки и внедрения новых продуктов и клиентских решений в экосистеме «Газпром нефти».',
-  'Родные города': 'Программа социальных инвестиций «Газпром нефти», объединяющая проекты развития городской среды, культуры, образования, спорта и волонтёрства.',
+  'Родные города': 'Социальная программа «Газпром нефти». Развивает города присутствия компании через проекты в образовании, культуре, экологии и городской среде.',
   'Брендлист': 'Цифровая платформа управления портфелем брендов «Газпром нефти». Помогает систематизировать данные, связи, владельцев и товарные знаки компании.',
   'Волонтёры Газпром нефти': 'Корпоративное волонтёрское движение, которое объединяет сотрудников компании вокруг социальных, экологических и благотворительных инициатив.',
   'Хоккей для всех': 'Социальный спортивный проект, который делает хоккей доступнее для детей и поддерживает развитие массового спорта в регионах.',
@@ -1100,6 +1139,7 @@ const groupDescriptionTemplates = {
 };
 
 const brandLogoFiles = {
+  'Газпром нефть': 'assets/gazprom-neft.svg',
   'Биосфера': 'assets/biosfera.png',
   'Smart Fuel': 'assets/smart-fuel.png',
   'Полиом': 'assets/poliom.png',
@@ -1177,10 +1217,101 @@ function renderTrademarks(items) {
   });
 }
 
+const rodnyeChildrenPreview = [
+  'Волонтеры Газпром нефти',
+  'Дай лапу',
+  'Грантовый конкурс Газпром нефти',
+  'Математическая прогрессия'
+];
+
+const mockBrandContacts = [
+  { eol: 'И.А. Петров', contact: 'Petrov.IA@gazprom-neft.ru' },
+  { eol: 'Е.С. Смирнова', contact: 'Smirnova.ES@gazprom-neft.ru' },
+  { eol: 'Д.В. Кузнецов', contact: 'Kuznetsov.DV@gazprom-neft.ru' },
+  { eol: 'М.А. Волкова', contact: 'Volkova.MA@gazprom-neft.ru' },
+  { eol: 'А.С. Морозов', contact: 'Morozov.AS@gazprom-neft.ru' },
+  { eol: 'О.В. Соколова', contact: 'Sokolova.OV@gazprom-neft.ru' },
+  { eol: 'П.Н. Лебедев', contact: 'Lebedev.PN@gazprom-neft.ru' },
+  { eol: 'Т.В. Новикова', contact: 'Novikova.TV@gazprom-neft.ru' },
+  { eol: 'Р.А. Орлов', contact: 'Orlov.RA@gazprom-neft.ru' },
+  { eol: 'Ю.В. Федорова', contact: 'Fedorova.YV@gazprom-neft.ru' }
+];
+
+const mockAudienceOptions = ['B2B', 'B2C', 'B2P', 'B2G', 'B2S'];
+
+function getStableBrandHash(value) {
+  return [...value].reduce((hash, character) => ((hash * 31) + character.codePointAt(0)) >>> 0, 0);
+}
+
+function getMockBrandDetails(node) {
+  if (node.label === 'Родные города') {
+    return {
+      audience: 'B2C, B2B',
+      eol: 'Н.В. Яровенко',
+      contact: 'Yarovenko.NV@gazprom-neft.ru'
+    };
+  }
+
+  const hash = getStableBrandHash(node.label);
+  const contact = mockBrandContacts[hash % mockBrandContacts.length];
+  const audienceCount = 1 + (Math.floor(hash / 7) % 3);
+  const audienceStart = Math.floor(hash / 17) % mockAudienceOptions.length;
+  const audience = Array.from(
+    { length: audienceCount },
+    (_, index) => mockAudienceOptions[(audienceStart + index * 2) % mockAudienceOptions.length]
+  );
+
+  return {
+    audience: audience.join(', '),
+    eol: contact.eol,
+    contact: contact.contact
+  };
+}
+
+function getRodnyeChildren(node) {
+  const graphChildren = nodes.filter(child => child.parentId === node.id).map(child => child.label);
+  return [...rodnyeChildrenPreview, ...graphChildren.filter(label => !rodnyeChildrenPreview.some(item => normalizeSearchValue(item) === normalizeSearchValue(label)))];
+}
+
+function getDetailChildren(node) {
+  if (node.label === 'Родные города') return getRodnyeChildren(node);
+  return nodes.filter(child => child.parentId === node.id).map(child => child.label);
+}
+
+function renderDetailChildren(items) {
+  detailChildren.replaceChildren();
+  if (!items.length) {
+    detailChildren.textContent = '—';
+    detailChildrenExpand.hidden = true;
+    return;
+  }
+  detailChildrenExpand.hidden = items.length <= 4;
+  items.forEach((item, index) => {
+    const itemGroup = document.createElement('span');
+    itemGroup.className = 'detail-child-item';
+
+    const label = document.createElement('span');
+    label.textContent = item;
+    itemGroup.appendChild(label);
+
+    if (index < items.length - 1) {
+      const dot = document.createElement('span');
+      dot.className = 'detail-trademark-dot';
+      dot.setAttribute('aria-hidden', 'true');
+      itemGroup.appendChild(dot);
+    }
+
+    detailChildren.appendChild(itemGroup);
+  });
+}
+
 function openDetailPanel(node) {
   const cluster = clusters.find(item => item.id === node.clusterId);
   const parentNode = node.parentId ? nodeById.get(node.parentId) : null;
   const description = getBrandDescription(node, cluster);
+  const isRodnyeCities = node.label === 'Родные города';
+  const childBrands = getDetailChildren(node);
+  const mockDetails = getMockBrandDetails(node);
 
   detailTitle.textContent = node.label;
   detailDescription.textContent = description;
@@ -1188,12 +1319,15 @@ function openDetailPanel(node) {
   detailExpand.textContent = 'Показать все';
   detailExpand.hidden = true;
   detailParent.textContent = parentNode?.label || 'Газпром нефть';
+  detailChildren.classList.remove('is-expanded');
+  detailChildrenExpand.textContent = 'Показать все';
+  detailChildrenField.hidden = childBrands.length === 0;
+  renderDetailChildren(childBrands);
   renderTrademarks(node.label === 'G-Drive' ? ['G-Drive', 'Drive Café'] : [node.label]);
-  detailCategory.textContent = node.parentId || node.isParentBrand ? 'Программа' : 'Бренд';
-  detailOwner.textContent = cluster?.short || 'Газпром нефть';
-  detailType.textContent = node.label === 'G-Drive' || node.isParentBrand ? 'Зонтичный' : 'Самостоятельный';
-  detailGeography.textContent = 'Россия';
-  detailEol.textContent = node.label === 'G-Drive' ? 'А. В. Ненько' : '—';
+  detailCategory.textContent = isRodnyeCities ? 'Стратегия / программа' : node.parentId || node.isParentBrand ? 'Программа' : 'Бренд';
+  detailAudience.textContent = mockDetails.audience;
+  detailEol.textContent = mockDetails.eol;
+  detailContacts.textContent = mockDetails.contact;
 
   const logoFile = brandLogoFiles[node.label];
   if (logoFile) {
@@ -1247,6 +1381,10 @@ detailClose.addEventListener('click', closeDetailPanel);
 detailExpand.addEventListener('click', () => {
   const expanded = detailDescription.classList.toggle('is-expanded');
   detailExpand.textContent = expanded ? 'Свернуть' : 'Показать все';
+});
+detailChildrenExpand.addEventListener('click', () => {
+  const expanded = detailChildren.classList.toggle('is-expanded');
+  detailChildrenExpand.textContent = expanded ? 'Свернуть' : 'Показать все';
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeDetailPanel();
