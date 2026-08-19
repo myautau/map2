@@ -720,14 +720,15 @@ function showHoverLogo(node) {
   if (!logoFile) return false;
 
   const isGazpromNeft = node.label === 'Газпром нефть';
+  const isCompactLogo = node.label === 'N1';
   const cardX = Math.min(Math.max(node.x - 68, 4), 1022);
   const preferredY = node.y - node.r - 148;
   const cardY = preferredY >= 4 ? preferredY : node.y + node.r + 12;
   hoverLogoCard.setAttribute('transform', `translate(${cardX} ${cardY})`);
-  hoverLogoImage.setAttribute('x', isGazpromNeft ? '20.4' : '16');
-  hoverLogoImage.setAttribute('y', isGazpromNeft ? '40.3' : '16');
-  hoverLogoImage.setAttribute('width', isGazpromNeft ? '91.8' : '104');
-  hoverLogoImage.setAttribute('height', isGazpromNeft ? '44.9' : '104');
+  hoverLogoImage.setAttribute('x', isGazpromNeft ? '20.4' : isCompactLogo ? '28' : '16');
+  hoverLogoImage.setAttribute('y', isGazpromNeft ? '40.3' : isCompactLogo ? '28' : '16');
+  hoverLogoImage.setAttribute('width', isGazpromNeft ? '91.8' : isCompactLogo ? '80' : '104');
+  hoverLogoImage.setAttribute('height', isGazpromNeft ? '44.9' : isCompactLogo ? '80' : '104');
   hoverLogoImage.setAttribute('href', logoFile);
   hoverLogoCard.classList.add('is-visible');
   return true;
@@ -928,13 +929,13 @@ function updateBrandVisibility(zoom) {
   const visibleTier = !semanticZoomToggle.checked ? 2 : zoom >= 1.8 ? 2 : zoom >= 1.3 ? 1 : 0;
 
   document.querySelectorAll('.node-group[data-visibility-tier]').forEach(group => {
-    const isSelected = group.classList.contains('is-active');
+    const isSelected = group.classList.contains('is-active') || group.classList.contains('is-connected');
     group.classList.toggle('is-zoom-hidden', Number(group.dataset.visibilityTier) > visibleTier && !isSelected);
   });
 
   document.querySelectorAll('.edge[data-visibility-tier]').forEach(edge => {
     const targetGroup = document.querySelector(`.node-group[data-id="${edge.dataset.target}"]`);
-    const isSelected = targetGroup?.classList.contains('is-active');
+    const isSelected = targetGroup?.classList.contains('is-active') || targetGroup?.classList.contains('is-connected');
     edge.classList.toggle('is-zoom-hidden', Number(edge.dataset.visibilityTier) > visibleTier && !isSelected);
   });
 }
@@ -1032,12 +1033,24 @@ function getFocusPathIds(focusId) {
   return pathIds;
 }
 
+function getFocusSelectionIds(focusId) {
+  const selectionIds = getFocusPathIds(focusId);
+  const isCluster = clusters.some(cluster => cluster.id === focusId);
+  if (!isCluster) return selectionIds;
+
+  nodes.forEach(node => {
+    if (node.clusterId === focusId) selectionIds.add(node.id);
+  });
+
+  return selectionIds;
+}
+
 function setFocus(id, pin) {
   if (pin) pinnedId = id;
   const focusId = pin ? pinnedId : pinnedId || id;
   if (!focusId) return clearFocus();
 
-  const focusPathIds = getFocusPathIds(focusId);
+  const focusPathIds = getFocusSelectionIds(focusId);
   svg.classList.add('has-focus');
   document.querySelectorAll('.node-group').forEach(group => {
     const connected = focusPathIds.has(group.dataset.id);
@@ -1338,11 +1351,13 @@ function openDetailPanel(node) {
   if (logoFile) {
     detailLogoImage.src = logoFile;
     detailLogoImage.alt = node.label;
+    detailLogoImage.classList.toggle('is-compact', node.label === 'N1');
     detailLogoImage.style.display = 'block';
     detailLogoText.style.display = 'none';
   } else {
     detailLogoImage.removeAttribute('src');
     detailLogoImage.alt = '';
+    detailLogoImage.classList.remove('is-compact');
     detailLogoImage.style.display = 'none';
     detailLogoText.textContent = node.label;
     detailLogoText.style.color = node.color;

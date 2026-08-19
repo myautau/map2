@@ -415,6 +415,7 @@ button { font: inherit; }
   height: 70%;
   object-fit: contain;
 }
+.detail-logo-image.is-compact { transform: scale(.78); }
 .detail-logo-text {
   max-width: 88%;
   color: #006bb6;
