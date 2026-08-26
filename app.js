@@ -313,6 +313,15 @@ function getSphereCategory(label, clusterId, group = '') {
   return sphereCategoryById.get('corporate');
 }
 
+function getSphereCategoryIds(label, clusterId, group = '') {
+  const key = normalizeBrandKey(label);
+  const groupKey = normalizeBrandKey(group);
+  if (clusterId === 'dkkrr' && groupKey === 'социальные инвестиции' && key === 'родные города') {
+    return ['culture', 'sport', 'education'];
+  }
+  return [getSphereCategory(label, clusterId, group).id];
+}
+
 function getAllBrandDefinitions() {
   return clusters.flatMap(cluster => cluster.groups.flatMap(group => group.brands.flatMap(brand => {
     if (typeof brand === 'string') return [{ label: brand }];
@@ -348,7 +357,7 @@ function buildTreeData(mode = 'departments') {
                   ? item === brand.label
                   : item.label === brand.label || (item.children || []).includes(brand.label)
               )))?.label || '';
-              return getSphereCategory(brand.label, source?.id, sourceGroup).id === category.id;
+              return getSphereCategoryIds(brand.label, source?.id, sourceGroup).includes(category.id);
             })
             .map(brand => ({ label: brand.label, color: category.color, brandLabel: brand.label }));
           return {
@@ -756,7 +765,7 @@ prepareObjectLayout();
 const sphereBrandPositions = new Map();
 const sphereLayoutCategories = sphereCategories.map(category => ({
   ...category,
-  brands: nodes.filter(node => node.clusterId && node.sphereCategory?.id === category.id)
+  brands: nodes.filter(node => node.clusterId && getSphereCategoryIds(node.label, node.clusterId, node.group).includes(category.id))
 })).filter(category => category.brands.length);
 
 function prepareSphereLayout() {
@@ -783,11 +792,13 @@ function prepareSphereLayout() {
       for (let index = 0; index < count; index += 1) {
         const node = category.brands[brandIndex];
         const angle = count === 1 ? category.angle : start + index * step;
-        const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
-        sphereBrandPositions.set(node.id, {
-          x: Math.max(24, Math.min(1138, point.x)),
-          y: Math.max(24, Math.min(936, point.y))
-        });
+        const rawPoint = polarPoint(rootNode.x, rootNode.y, radius, angle);
+        const point = {
+          x: Math.max(24, Math.min(1138, rawPoint.x)),
+          y: Math.max(24, Math.min(936, rawPoint.y))
+        };
+        sphereBrandPositions.set(`${category.id}:${node.id}`, point);
+        if (!sphereBrandPositions.has(node.id)) sphereBrandPositions.set(node.id, point);
         brandIndex += 1;
       }
     });
@@ -1376,7 +1387,7 @@ function getGroupedAnimationItems(type, categories, graphLayer) {
     rootLine: graphLayer.querySelector(`.${type}-edge[data-target="${type}-category-${category.id}"]`),
     brandLines: category.brands.map(node => ({
       node,
-      line: graphLayer.querySelector(`.${type}-edge[data-target="${CSS.escape(node.id)}"]`)
+      line: graphLayer.querySelector(`.${type}-edge[data-category-id="${category.id}"][data-target="${CSS.escape(node.id)}"]`)
     }))
   }));
 }
