@@ -213,6 +213,19 @@ const sphereCategories = [
 
 const sphereCategoryById = new Map(sphereCategories.map(category => [category.id, category]));
 
+const brandClusterCategories = [
+  { id: 'corporate', label: 'Корпоративный', color: '#32B4FF' },
+  { id: 'internal', label: 'Внутрикорпоративный', color: '#90DDFF' },
+  { id: 'sustainable', label: 'Устойчивое развитие', color: '#3B4195' },
+  { id: 'technological', label: 'Технологический', color: '#646CDF' },
+  { id: 'industrial-infrastructure', label: 'Индустриально-инфраструктурный', color: '#056C77' },
+  { id: 'digital', label: 'Цифровой', color: '#24AFBE' },
+  { id: 'industrial-product', label: 'Индустриально-продуктовый', color: '#FFBD59' },
+  { id: 'consumer', label: 'Потребительский', color: '#FFE7BC' }
+];
+
+const brandClusterCategoryById = new Map(brandClusterCategories.map(category => [category.id, category]));
+
 function normalizeBrandKey(value) {
   return value.toLocaleLowerCase('ru')
     .replaceAll('ё', 'е')
@@ -322,6 +335,30 @@ function getSphereCategoryIds(label, clusterId, group = '') {
   return [getSphereCategory(label, clusterId, group).id];
 }
 
+function getBrandClusterCategory(label, clusterId, group = '') {
+  const key = normalizeBrandKey(label);
+  const groupKey = normalizeBrandKey(group);
+  const inferredCategoryId = [
+    [/родные города|волонтер|чистая среда|водная среда|зеленая среда|родные музеи|грантовый конкурс|математическая прогрессия|умножая таланты|хоккей|спорт во дворе|спортивный полюс|шторм|мастера|научные лагеря|эрмитаж|музыкальная мастерская|сказки севера|местные|zajedno|кустендорф|пикник|полигон/, 'sustainable'],
+    [/корпоративный университет|профессионалы 4\.0|лига колледжей|люди прогресса|экспертные решения|охтацентр/, 'internal'],
+    [/isource|logitech|logotech|leancon|consta|n1|акпо|линкон|ит полигон|виджет линк|цифраториум|smart fuel|syntolux|g lab|industrix|техактив/, 'technological'],
+    [/вебнефть|startupdrive|mercapp|инсайт|брендлист|нефтегазета|арктика медиа|тюмень 1|ямал 1|promine|эталон/, 'digital'],
+    [/салым петролеум|актив будущего|геобазис|кедр|мессояханефтегаз|геонавигатор|геосфера|капитан|арктикгаз|меретояханефтегаз|южно приобский гпз|каркас безопасности|закупки|складское хозяйство|логистика/, 'industrial-infrastructure'],
+    [/g drive|g energy|битлайт|брит|нефтехимия|биосфера|полиом|опти|dda|газпромнефть ocean/, 'industrial-product'],
+    [/drive café|сеть азс|розетка|g drive arena|энерготехнофест/, 'consumer'],
+    [/cfo|финанс|аудит|стратег|корпоративное управление/, 'corporate']
+  ].find(([pattern]) => pattern.test(key) || pattern.test(groupKey))?.[1];
+
+  if (inferredCategoryId) return brandClusterCategoryById.get(inferredCategoryId);
+  if (groupKey === 'социальные инвестиции') return brandClusterCategoryById.get('sustainable');
+  if (clusterId === 'bkss') return brandClusterCategoryById.get('technological');
+  if (clusterId === 'bgi') return brandClusterCategoryById.get('industrial-infrastructure');
+  if (clusterId === 'blps') return brandClusterCategoryById.get('industrial-product');
+  if (clusterId === 'dkkrr') return brandClusterCategoryById.get(groupKey === 'коммуникации' ? 'digital' : 'sustainable');
+  if (clusterId === 'bbrp') return brandClusterCategoryById.get('internal');
+  return brandClusterCategoryById.get('corporate');
+}
+
 function getAllBrandDefinitions() {
   return clusters.flatMap(cluster => cluster.groups.flatMap(group => group.brands.flatMap(brand => {
     if (typeof brand === 'string') return [{ label: brand }];
@@ -368,6 +405,31 @@ function buildTreeData(mode = 'departments') {
             children: sortTreeNodes(brands)
           };
         }).filter(category => category.children.length)
+      : mode === 'brand-clusters'
+        ? brandClusterCategories.map(category => {
+            const brands = getAllBrandDefinitions()
+              .filter(brand => {
+                const source = clusters.find(cluster => cluster.groups.some(group => group.brands.some(item => (
+                  typeof item === 'string'
+                    ? item === brand.label
+                    : item.label === brand.label || (item.children || []).includes(brand.label)
+                ))));
+                const sourceGroup = source?.groups.find(group => group.brands.some(item => (
+                  typeof item === 'string'
+                    ? item === brand.label
+                    : item.label === brand.label || (item.children || []).includes(brand.label)
+                )))?.label || '';
+                return getBrandClusterCategory(brand.label, source?.id, sourceGroup).id === category.id;
+              })
+              .map(brand => ({ label: brand.label, color: category.color, brandLabel: brand.label }));
+            return {
+              label: category.label,
+              color: category.color,
+              groupedCategoryId: category.id,
+              groupedCategoryType: 'brand-cluster',
+              children: sortTreeNodes(brands)
+            };
+          }).filter(category => category.children.length)
     : clusters.map(cluster => ({
         label: cluster.short,
         color: cluster.color,
@@ -489,7 +551,14 @@ function openDisplayModeList() {
 
 function selectDisplayMode(option) {
   displayMode = option.dataset.value;
-  if (pinnedId?.startsWith('grouped:') && !pinnedId.startsWith(`grouped:${displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'department'}:`)) {
+  const groupedType = displayMode === 'objects'
+    ? 'object'
+    : displayMode === 'spheres'
+      ? 'sphere'
+      : displayMode === 'brand-clusters'
+        ? 'brand-cluster'
+        : 'department';
+  if (pinnedId?.startsWith('grouped:') && !pinnedId.startsWith(`grouped:${groupedType}:`)) {
     pinnedId = null;
   }
   displayModeValue.textContent = option.textContent;
@@ -644,6 +713,7 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
     const angle = (sliceStart + sliceEnd) / 2;
     const point = polarPoint(rootNode.x, rootNode.y, 250, angle);
     const isParentBrand = brand.children.length > 0;
+    const isEmphasizedParent = isParentBrand && !['Арктика Медиа', 'Родные города'].includes(brand.label);
     const id = isParentBrand
       ? `${cluster.id}-nested-parent-${topLevelIndex}`
       : `${cluster.id}-direct-${topLevelIndex}`;
@@ -656,13 +726,13 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
       isParentBrand,
       x: point.x,
       y: point.y,
-      r: isParentBrand ? 6 : 4.5,
+      r: isEmphasizedParent ? 6 : 4.5,
       color: cluster.color,
       departmentColor: cluster.color,
       objectCategory: getObjectCategory(brand.label),
       sphereCategory: getSphereCategory(brand.label, cluster.id, brand.group),
-      font: isParentBrand ? 10 : 8.5,
-      weight: isParentBrand ? 500 : 400
+      font: isEmphasizedParent ? 10 : 8.5,
+      weight: isEmphasizedParent ? 500 : 400
     });
     edges.push({ source: cluster.id, target: id, color: cluster.color });
 
@@ -714,7 +784,22 @@ rootNode.objectCategory = objectCategoryById.get('company');
 nodes.forEach(node => {
   node.departmentX = node.x;
   node.departmentY = node.y;
+  if (node.clusterId) node.brandClusterCategory = getBrandClusterCategory(node.label, node.clusterId, node.group);
 });
+
+const rodnyeCitiesNode = nodes.find(node => node.label === 'Родные города');
+const sphereDuplicateNodes = rodnyeCitiesNode
+  ? ['culture', 'sport', 'education'].map(categoryId => ({
+      ...rodnyeCitiesNode,
+      id: `${rodnyeCitiesNode.id}--${categoryId}`,
+      sphereCategory: sphereCategoryById.get(categoryId),
+      sphereDuplicateOf: rodnyeCitiesNode.id
+    }))
+  : [];
+const sphereDisplayNodes = [
+  ...nodes.filter(node => node.id !== rodnyeCitiesNode?.id),
+  ...sphereDuplicateNodes
+];
 
 const objectBrandPositions = new Map();
 const objectLayoutCategories = objectCategories.map(category => ({
@@ -765,7 +850,7 @@ prepareObjectLayout();
 const sphereBrandPositions = new Map();
 const sphereLayoutCategories = sphereCategories.map(category => ({
   ...category,
-  brands: nodes.filter(node => node.clusterId && getSphereCategoryIds(node.label, node.clusterId, node.group).includes(category.id))
+  brands: sphereDisplayNodes.filter(node => node.clusterId && node.sphereCategory?.id === category.id)
 })).filter(category => category.brands.length);
 
 function prepareSphereLayout() {
@@ -809,6 +894,51 @@ function prepareSphereLayout() {
 
 prepareSphereLayout();
 
+const brandClusterBrandPositions = new Map();
+const brandClusterLayoutCategories = brandClusterCategories.map(category => ({
+  ...category,
+  brands: nodes.filter(node => node.clusterId && node.brandClusterCategory?.id === category.id)
+})).filter(category => category.brands.length);
+
+function prepareBrandClusterLayout() {
+  const gap = 4;
+  const availableDegrees = 360 - gap * brandClusterLayoutCategories.length;
+  const totalWeight = brandClusterLayoutCategories.reduce((sum, category) => sum + Math.max(10, category.brands.length), 0);
+  let cursor = -174;
+
+  brandClusterLayoutCategories.forEach(category => {
+    const sectorSize = availableDegrees * Math.max(10, category.brands.length) / totalWeight;
+    category.sectorStart = cursor + gap / 2;
+    category.sectorEnd = cursor + sectorSize - gap / 2;
+    category.angle = (category.sectorStart + category.sectorEnd) / 2;
+    category.position = polarPoint(rootNode.x, rootNode.y, 182, category.angle);
+
+    const rings = getObjectRingCounts(category.brands.length, sectorSize);
+    let brandIndex = 0;
+    rings.forEach((count, ringIndex) => {
+      const radius = rings.length === 1 ? 350 : 338 + ringIndex * 72;
+      const inset = Math.min(1.5, Math.max(.35, sectorSize * .06));
+      const start = category.sectorStart + inset;
+      const end = category.sectorEnd - inset;
+      const step = count === 1 ? 0 : (end - start) / (count - 1);
+      for (let index = 0; index < count; index += 1) {
+        const node = category.brands[brandIndex];
+        const angle = count === 1 ? category.angle : start + index * step;
+        const rawPoint = polarPoint(rootNode.x, rootNode.y, radius, angle);
+        brandClusterBrandPositions.set(node.id, {
+          x: Math.max(24, Math.min(1138, rawPoint.x)),
+          y: Math.max(24, Math.min(936, rawPoint.y))
+        });
+        brandIndex += 1;
+      }
+    });
+
+    cursor += sectorSize + gap;
+  });
+}
+
+prepareBrandClusterLayout();
+
 function getObjectRingCounts(total, sectorSize) {
   const counts = [];
   let remaining = total;
@@ -828,6 +958,7 @@ function getObjectRingCounts(total, sectorSize) {
 function getNodeDisplayColor(node) {
   if (node.id === 'root') return palette.root;
   if (displayMode === 'spheres') return node.sphereCategory?.color || sphereCategoryById.get('corporate').color;
+  if (displayMode === 'brand-clusters') return node.brandClusterCategory?.color || brandClusterCategoryById.get('corporate').color;
   return displayMode === 'objects'
     ? node.objectCategory?.color || objectCategoryById.get('service').color
     : node.departmentColor;
@@ -835,7 +966,7 @@ function getNodeDisplayColor(node) {
 
 function applyDisplayModeColors() {
   if (typeof nodeById === 'undefined') return;
-  nodes.forEach(node => {
+  [...nodes, ...sphereDuplicateNodes].forEach(node => {
     node.color = getNodeDisplayColor(node);
     const circle = document.querySelector(`.node-group[data-id="${CSS.escape(node.id)}"] .node-dot`);
     if (circle) circle.setAttribute('fill', node.color);
@@ -1137,6 +1268,7 @@ hoverLogoLayer.appendChild(hoverLogoCard);
 nodes.forEach(node => {
   const group = createSvgElement('g', { class: 'node-group', tabindex: '0', role: 'button', 'aria-label': node.label });
   group.dataset.id = node.id;
+  if (node.id === rodnyeCitiesNode?.id) group.classList.add('sphere-source-node');
   if (node.id !== 'root' && !node.clusterId) group.classList.add('is-cluster-node');
   if (node.clusterId) group.dataset.clusterId = node.clusterId;
   if (node.visibilityTier !== undefined) group.dataset.visibilityTier = node.visibilityTier;
@@ -1330,6 +1462,48 @@ function createGroupedGraphLayer(type, categories, positions) {
 }
 
 const sphereGraphLayer = createGroupedGraphLayer('sphere', sphereLayoutCategories, sphereBrandPositions);
+const brandClusterGraphLayer = createGroupedGraphLayer('brand-cluster', brandClusterLayoutCategories, brandClusterBrandPositions);
+svg.insertBefore(brandClusterGraphLayer, nodeLayer);
+const sphereNodeLayer = createSvgElement('g', { class: 'sphere-node-layer' });
+sphereDuplicateNodes.forEach(node => {
+  const sourceNode = nodeById.get(node.sphereDuplicateOf);
+  const group = createSvgElement('g', { class: 'node-group sphere-duplicate-node', tabindex: '0', role: 'button', 'aria-label': node.label });
+  group.dataset.id = node.id;
+  group.dataset.sourceId = node.sphereDuplicateOf;
+  group.dataset.clusterId = node.clusterId;
+  group.dataset.visibilityTier = node.visibilityTier;
+  const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
+  const circle = createSvgElement('circle', { class: 'node-dot', cx: node.x, cy: node.y, r: node.r, fill: node.color });
+  circle.style.setProperty('--node-hover-radius', `${Math.max(7, node.r + 2)}px`);
+  group.append(hitArea, circle);
+  addWrappedLabel(group, node);
+  sphereNodeLayer.appendChild(group);
+
+  group.addEventListener('mouseenter', event => {
+    if (showHoverLogo(sourceNode)) hideTooltip();
+    else showTooltip(event, sourceNode);
+    setFocus(sourceNode.id, false);
+  });
+  group.addEventListener('mousemove', event => {
+    if (!brandLogoFiles[sourceNode.label]) showTooltip(event, sourceNode);
+  });
+  group.addEventListener('mouseleave', () => {
+    hideHoverLogo();
+    hideTooltip();
+    if (!pinnedId) clearFocus();
+  });
+  group.addEventListener('click', () => {
+    setFocus(sourceNode.id, true);
+    navigateToNode(sourceNode);
+  });
+  group.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    setFocus(sourceNode.id, true);
+    navigateToNode(sourceNode);
+  });
+});
+sphereGraphLayer.appendChild(sphereNodeLayer);
 svg.insertBefore(sphereGraphLayer, nodeLayer);
 svg.appendChild(hoverLogoLayer);
 document.fonts.ready.then(resolveLabelCollisions);
@@ -1360,8 +1534,9 @@ function attachGroupedCategoryInteractions(type, categories, graphLayer) {
 
 attachGroupedCategoryInteractions('object', objectLayoutCategories, objectGraphLayer);
 attachGroupedCategoryInteractions('sphere', sphereLayoutCategories, sphereGraphLayer);
+attachGroupedCategoryInteractions('brand-cluster', brandClusterLayoutCategories, brandClusterGraphLayer);
 
-const nodeAnimationItems = nodes
+const nodeAnimationItems = [...nodes, ...sphereDuplicateNodes]
   .filter(node => node.id !== 'root')
   .map(node => ({ node, group: document.querySelector(`.node-group[data-id="${CSS.escape(node.id)}"]`) }));
 const departmentEdgeAnimationItems = edges.map((edge, index) => ({
@@ -1382,6 +1557,7 @@ function getMotionVector(key, time, amplitude = 6) {
 
 function getGroupedAnimationItems(type, categories, graphLayer) {
   return categories.map(category => ({
+    type,
     category,
     group: graphLayer.querySelector(`.${type}-category-group[data-category-id="${category.id}"]`),
     rootLine: graphLayer.querySelector(`.${type}-edge[data-target="${type}-category-${category.id}"]`),
@@ -1394,11 +1570,12 @@ function getGroupedAnimationItems(type, categories, graphLayer) {
 
 const objectAnimationItems = getGroupedAnimationItems('object', objectLayoutCategories, objectGraphLayer);
 const sphereAnimationItems = getGroupedAnimationItems('sphere', sphereLayoutCategories, sphereGraphLayer);
+const brandClusterAnimationItems = getGroupedAnimationItems('brand-cluster', brandClusterLayoutCategories, brandClusterGraphLayer);
 let ambientAnimationFrame = null;
 
 function updateGroupedAnimation(items, time, active) {
   items.forEach(item => {
-    const type = item.group?.classList.contains('object-category-group') ? 'object' : 'sphere';
+    const type = item.type;
     const categoryOffset = active ? getMotionVector(`${type}-category-${item.category.id}`, time, 5) : { x: 0, y: 0 };
     item.group?.setAttribute('transform', active ? `translate(${categoryOffset.x.toFixed(2)} ${categoryOffset.y.toFixed(2)})` : '');
     item.rootLine?.setAttribute('x2', item.category.position.x + categoryOffset.x);
@@ -1422,9 +1599,11 @@ function renderAmbientAnimation(time = 0) {
       ? node.objectCategory
       : displayMode === 'spheres'
         ? node.sphereCategory
+        : displayMode === 'brand-clusters'
+          ? node.brandClusterCategory
         : null;
     const motionKey = category
-      ? `${displayMode === 'objects' ? 'object' : 'sphere'}-category-${category.id}`
+      ? `${displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'brand-cluster'}-category-${category.id}`
       : `department-${node.clusterId || node.id}`;
     const offset = active ? getMotionVector(motionKey, time, 5) : { x: 0, y: 0 };
     nodeOffsets.set(node.id, offset);
@@ -1443,6 +1622,7 @@ function renderAmbientAnimation(time = 0) {
 
   updateGroupedAnimation(objectAnimationItems, time, active);
   updateGroupedAnimation(sphereAnimationItems, time, active);
+  updateGroupedAnimation(brandClusterAnimationItems, time, active);
 
   if (active) ambientAnimationFrame = requestAnimationFrame(renderAmbientAnimation);
   else ambientAnimationFrame = null;
@@ -1477,10 +1657,13 @@ function setNodePosition(node, point) {
 function applyDisplayModeLayout() {
   const isObjectMode = displayMode === 'objects';
   const isSphereMode = displayMode === 'spheres';
+  const isBrandClusterMode = displayMode === 'brand-clusters';
   svg.classList.toggle('is-object-mode', isObjectMode);
   svg.classList.toggle('is-sphere-mode', isSphereMode);
+  svg.classList.toggle('is-brand-cluster-mode', isBrandClusterMode);
   objectGraphLayer.setAttribute('aria-hidden', String(!isObjectMode));
   sphereGraphLayer.setAttribute('aria-hidden', String(!isSphereMode));
+  brandClusterGraphLayer.setAttribute('aria-hidden', String(!isBrandClusterMode));
 
   nodes.forEach(node => {
     if (node.id === 'root') return;
@@ -1489,8 +1672,15 @@ function applyDisplayModeLayout() {
         ? objectBrandPositions.get(node.id)
         : isSphereMode
           ? sphereBrandPositions.get(node.id)
+          : isBrandClusterMode
+            ? brandClusterBrandPositions.get(node.id)
           : { x: node.departmentX, y: node.departmentY }
       : { x: node.departmentX, y: node.departmentY };
+    if (point) setNodePosition(node, point);
+  });
+
+  sphereDuplicateNodes.forEach(node => {
+    const point = isSphereMode ? sphereBrandPositions.get(node.id) : { x: node.departmentX, y: node.departmentY };
     if (point) setNodePosition(node, point);
   });
 
@@ -1549,17 +1739,18 @@ function resolveLabelCollisions() {
   const margin = 6;
   const bounds = { width: 1162, height: 960 };
   const labels = [...document.querySelectorAll('.node-group .node-label')]
-    .filter(label => nodeById.get(label.parentElement.dataset.id)?.font < 12)
+    .filter(label => (nodeById.get(label.parentElement.dataset.id) || sphereDuplicateNodes.find(node => node.id === label.parentElement.dataset.id))?.font < 12)
     .map(label => ({ label, box: label.getBBox() }))
     .sort((first, second) => second.box.width * second.box.height - first.box.width * first.box.height);
   const dots = [...document.querySelectorAll('.node-group .node-dot')]
-    .filter(dot => !['objects', 'spheres'].includes(displayMode) || !dot.closest('.is-cluster-node'))
+    .filter(dot => !['objects', 'spheres', 'brand-clusters'].includes(displayMode) || !dot.closest('.is-cluster-node'))
     .map(dot => dot.getBBox());
-  if (['objects', 'spheres'].includes(displayMode)) {
-    document.querySelectorAll(`.${displayMode === 'objects' ? 'object' : 'sphere'}-category-dot`).forEach(dot => dots.push(dot.getBBox()));
+  if (['objects', 'spheres', 'brand-clusters'].includes(displayMode)) {
+    const groupedType = displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'brand-cluster';
+    document.querySelectorAll(`.${groupedType}-category-dot`).forEach(dot => dots.push(dot.getBBox()));
   }
-  const placed = ['objects', 'spheres'].includes(displayMode)
-    ? [...document.querySelectorAll(`.${displayMode === 'objects' ? 'object' : 'sphere'}-category-label`)].map(label => label.getBBox())
+  const placed = ['objects', 'spheres', 'brand-clusters'].includes(displayMode)
+    ? [...document.querySelectorAll(`.${displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'brand-cluster'}-category-label`)].map(label => label.getBBox())
     : [];
 
   const intersects = (first, second) => (
@@ -1759,7 +1950,7 @@ let suppressNodeClick = false;
 
 svg.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
-  if (event.target.closest('.node-group, .object-category-group, .sphere-category-group')) return;
+  if (event.target.closest('.node-group, .object-category-group, .sphere-category-group, .brand-cluster-category-group')) return;
   if (viewBoxAnimation) cancelAnimationFrame(viewBoxAnimation);
   viewBoxAnimation = null;
   panState = {
@@ -1813,7 +2004,11 @@ function getGroupedFocusId(type, categoryId) {
 }
 
 function getGroupedCategory(type, categoryId) {
-  const categories = type === 'object' ? objectLayoutCategories : sphereLayoutCategories;
+  const categories = type === 'object'
+    ? objectLayoutCategories
+    : type === 'sphere'
+      ? sphereLayoutCategories
+      : brandClusterLayoutCategories;
   return categories.find(category => category.id === categoryId);
 }
 
@@ -1831,7 +2026,8 @@ function applyGroupedCategoryFocus(type, categoryId) {
   const focusId = getGroupedFocusId(type, categoryId);
   svg.classList.add('has-focus');
   document.querySelectorAll('.node-group').forEach(group => {
-    const connected = group.dataset.id === 'root' || selectedBrandIds.has(group.dataset.id);
+    const sourceId = group.dataset.sourceId || group.dataset.id;
+    const connected = group.dataset.id === 'root' || selectedBrandIds.has(group.dataset.id) || selectedBrandIds.has(sourceId);
     group.classList.remove('is-active');
     group.classList.toggle('is-connected', connected);
     restoreLabelPosition(group);
@@ -1920,8 +2116,9 @@ function setFocus(id, pin) {
   const focusPathIds = getFocusSelectionIds(focusId);
   svg.classList.add('has-focus');
   document.querySelectorAll('.node-group').forEach(group => {
-    const connected = focusPathIds.has(group.dataset.id);
-    group.classList.toggle('is-active', group.dataset.id === focusId);
+    const sourceId = group.dataset.sourceId || group.dataset.id;
+    const connected = focusPathIds.has(group.dataset.id) || focusPathIds.has(sourceId);
+    group.classList.toggle('is-active', group.dataset.id === focusId || sourceId === focusId);
     group.classList.toggle('is-connected', connected);
     restoreLabelPosition(group);
   });
@@ -1929,9 +2126,13 @@ function setFocus(id, pin) {
     line.classList.toggle('is-connected', focusPathIds.has(line.dataset.source) && focusPathIds.has(line.dataset.target));
   });
   document.querySelectorAll('.tree-row').forEach(row => row.classList.toggle('is-active', row.dataset.graphId === focusId));
-  if (displayMode === 'objects' || displayMode === 'spheres') {
-    const type = displayMode === 'objects' ? 'object' : 'sphere';
-    const categoryProperty = displayMode === 'objects' ? 'objectCategory' : 'sphereCategory';
+  if (displayMode === 'objects' || displayMode === 'spheres' || displayMode === 'brand-clusters') {
+    const type = displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'brand-cluster';
+    const categoryProperty = displayMode === 'objects'
+      ? 'objectCategory'
+      : displayMode === 'spheres'
+        ? 'sphereCategory'
+        : 'brandClusterCategory';
     const selectedBrandIds = new Set([...focusPathIds].filter(nodeId => nodeById.get(nodeId)?.clusterId));
     const selectedCategoryIds = new Set([...selectedBrandIds].map(nodeId => nodeById.get(nodeId)?.[categoryProperty]?.id).filter(Boolean));
     document.querySelectorAll(`.${type}-category-group`).forEach(group => {

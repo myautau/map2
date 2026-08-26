@@ -357,23 +357,29 @@ button { font: inherit; }
 #graph.has-focus .edge:not(.is-connected) { opacity: .08; }
 #graph.has-focus .edge.is-connected { opacity: .65; stroke-width: 1; }
 .edge.is-zoom-hidden { opacity: 0 !important; }
-.object-graph-layer, .sphere-graph-layer { display: none; }
+.object-graph-layer, .sphere-graph-layer, .brand-cluster-graph-layer { display: none; }
 #graph.is-object-mode .object-graph-layer { display: block; }
 #graph.is-sphere-mode .sphere-graph-layer { display: block; }
-#graph.is-object-mode .edge-layer, #graph.is-sphere-mode .edge-layer { display: none; }
-#graph.is-object-mode .node-group.is-cluster-node, #graph.is-sphere-mode .node-group.is-cluster-node { display: none; }
-.object-category-group, .sphere-category-group { cursor: pointer; transition: opacity 140ms ease; }
-.object-category-group:focus, .sphere-category-group:focus { outline: none; }
-.object-category-dot, .sphere-category-dot { transition: r 140ms ease, opacity 140ms ease, filter 140ms ease; }
-.object-category-label, .sphere-category-label { user-select: none; }
+#graph.is-brand-cluster-mode .brand-cluster-graph-layer { display: block; }
+#graph.is-object-mode .edge-layer, #graph.is-sphere-mode .edge-layer, #graph.is-brand-cluster-mode .edge-layer { display: none; }
+#graph.is-object-mode .node-group.is-cluster-node, #graph.is-sphere-mode .node-group.is-cluster-node, #graph.is-brand-cluster-mode .node-group.is-cluster-node { display: none; }
+#graph.is-sphere-mode .node-group.sphere-source-node { display: none; }
+.object-category-group, .sphere-category-group, .brand-cluster-category-group { cursor: pointer; transition: opacity 140ms ease; }
+.object-category-group:focus, .sphere-category-group:focus, .brand-cluster-category-group:focus { outline: none; }
+.object-category-dot, .sphere-category-dot, .brand-cluster-category-dot { transition: r 140ms ease, opacity 140ms ease, filter 140ms ease; }
+.object-category-label, .sphere-category-label, .brand-cluster-category-label { user-select: none; }
 .object-category-group:hover .object-category-dot,
 .object-category-group.is-active .object-category-dot,
 .sphere-category-group:hover .sphere-category-dot,
-.sphere-category-group.is-active .sphere-category-dot { r: 9px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
+.sphere-category-group.is-active .sphere-category-dot,
+.brand-cluster-category-group:hover .brand-cluster-category-dot,
+.brand-cluster-category-group.is-active .brand-cluster-category-dot { r: 9px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
 #graph.has-focus.is-object-mode .object-category-group:not(.is-connected) { opacity: .35; }
 #graph.has-focus.is-object-mode .object-category-group.is-connected .object-category-dot { filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
 #graph.has-focus.is-sphere-mode .sphere-category-group:not(.is-connected) { opacity: .35; }
 #graph.has-focus.is-sphere-mode .sphere-category-group.is-connected .sphere-category-dot { filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
+#graph.has-focus.is-brand-cluster-mode .brand-cluster-category-group:not(.is-connected) { opacity: .35; }
+#graph.has-focus.is-brand-cluster-mode .brand-cluster-category-group.is-connected .brand-cluster-category-dot { filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
 
 .tooltip {
   position: absolute;
