@@ -1,14 +1,14 @@
 const palette = {
-  root: '#0076b7',
-  blue: '#2faef3',
-  orange: '#f29a42',
-  red: '#e45353',
-  bef: '#3b4195',
-  purple: '#9545c6',
-  teal: '#009395',
-  green: '#4bb77c',
-  pink: '#df5d91',
-  yellow: '#c2ad26'
+  root: '#0078d2',
+  blue: '#32b4ff',
+  orange: '#ffbd59',
+  red: '#ff7479',
+  bef: '#9ca3ff',
+  purple: '#646cdf',
+  teal: '#108e9c',
+  green: '#12b47e',
+  pink: '#ffc5c7',
+  yellow: '#d2e058'
 };
 
 const clusters = [
@@ -164,16 +164,223 @@ const clusters = [
   }
 ];
 
-const treeData = clusters.map(cluster => ({
-  label: cluster.short,
-  color: cluster.color,
-  graphId: cluster.id,
-  children: cluster.groups.map(group => ({
-    label: group.label,
-    color: cluster.color,
-    children: group.brands.map(brand => brandToTreeNode(brand, cluster.color))
-  }))
-}));
+const objectCategories = [
+  { id: 'company', label: 'Компания', color: '#32B4FF' },
+  { id: 'subsidiary', label: 'Дочернее общество', color: '#90DDFF' },
+  { id: 'joint-venture', label: 'Совместное предприятие', color: '#3B4195' },
+  { id: 'center', label: 'Центр', color: '#646CDF' },
+  { id: 'division', label: 'Структурное подразделение', color: '#056C77' },
+  { id: 'community', label: 'Сообщество', color: '#24AFBE' },
+  { id: 'product', label: 'Продукт', color: '#FFBD59' },
+  { id: 'service', label: 'Услуга', color: '#FFE7BC' },
+  { id: 'industrial', label: 'Производственный объект', color: '#9CA3FF' },
+  { id: 'field', label: 'Месторождение', color: '#108E9C' },
+  { id: 'transport', label: 'Транспортная инфраструктура', color: '#6AE0ED' },
+  { id: 'network', label: 'Сеть', color: '#FF7479' },
+  { id: 'system', label: 'Система', color: '#FFC5C7' },
+  { id: 'technology', label: 'Технология', color: '#E8792E' },
+  { id: 'technopark', label: 'Технопарк', color: '#1696DF' },
+  { id: 'digital-product', label: 'Цифровой продукт', color: '#A1B018' },
+  { id: 'media', label: 'СМИ', color: '#D2E058' },
+  { id: 'digital-media', label: 'Цифровые медиа', color: '#00724C' },
+  { id: 'films-books', label: 'Фильмы, книги', color: '#12B47E' },
+  { id: 'slogan', label: 'Слоган', color: '#32B4FF' },
+  { id: 'communication', label: 'Коммуникационная платформа', color: '#2F6FB0' },
+  { id: 'strategy', label: 'Стратегия / программа', color: '#7A5AF8' },
+  { id: 'project', label: 'Проект', color: '#C94F92' },
+  { id: 'award', label: 'Награда / конкурс', color: '#E8792E' },
+  { id: 'festival', label: 'Фестиваль / форум', color: '#4D8F77' }
+];
+
+const objectCategoryById = new Map(objectCategories.map(category => [category.id, category]));
+
+const sphereCategories = [
+  { id: 'corporate', label: 'Корпоративное управление', color: '#32B4FF' },
+  { id: 'production', label: 'Производство', color: '#90DDFF' },
+  { id: 'exploration', label: 'Разведка и добыча', color: '#3B4195' },
+  { id: 'sales', label: 'Сбыт', color: '#646CDF' },
+  { id: 'people', label: 'Персонал', color: '#056C77' },
+  { id: 'finance', label: 'Финансы', color: '#24AFBE' },
+  { id: 'logistics', label: 'Транспорт и логистика', color: '#FFBD59' },
+  { id: 'media', label: 'Медиа и коммуникации', color: '#FFE7BC' },
+  { id: 'safety', label: 'Производственная безопасность', color: '#9CA3FF' },
+  { id: 'technology', label: 'Технологии и цифра', color: '#108E9C' },
+  { id: 'education', label: 'Наука и образование', color: '#6AE0ED' },
+  { id: 'sport', label: 'Спорт', color: '#FF7479' },
+  { id: 'culture', label: 'Культура', color: '#FFC5C7' },
+  { id: 'ecology', label: 'Экология', color: '#12B47E' }
+];
+
+const sphereCategoryById = new Map(sphereCategories.map(category => [category.id, category]));
+
+function normalizeBrandKey(value) {
+  return value.toLocaleLowerCase('ru')
+    .replaceAll('ё', 'е')
+    .replace(/[«»“”"'—–-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const knownObjectCategories = new Map(Object.entries({
+  'Арктика Медиа': 'subsidiary',
+  'Газпромнефть Битумные материалы': 'subsidiary',
+  'Газпромнефть Шельф': 'subsidiary',
+  'Газпромнефть Московский завод смазочных материалов': 'subsidiary',
+  'Меретояханефтегаз': 'joint-venture',
+  'Мессояханефтегаз': 'joint-venture',
+  'Умножая таланты': 'project',
+  'Promine': 'digital-product',
+  'Энергия +': 'media',
+  'Вебнефть': 'digital-media',
+  'Полиом': 'joint-venture',
+  'Родные города': 'strategy',
+  'G-Energy': 'product',
+  'INDUSTRIX': 'strategy',
+  'Nedra Digital': 'digital-product',
+  'PROНЕФТЬ': 'digital-product',
+  'Smart Fuel': 'digital-product',
+  'Selektum': 'digital-product',
+  'SYNTOLUX': 'digital-product',
+  'Волонтеры Газпром нефти': 'strategy',
+  'Волонтёры Газпром нефти': 'strategy',
+  'Родные музеи': 'strategy',
+  'Математическая прогрессия': 'strategy',
+  'Музыкальная мастерская Юрия Розума': 'project',
+  'Грантовый конкурс Газпром нефти': 'strategy',
+  'Грантовый конкурс «Газпром нефти»': 'strategy'
+}).map(([label, categoryId]) => [normalizeBrandKey(label), categoryId]));
+
+function getObjectCategory(label) {
+  const key = normalizeBrandKey(label);
+  const knownCategoryId = knownObjectCategories.get(key);
+  if (knownCategoryId) return objectCategoryById.get(knownCategoryId);
+
+  const inferredCategoryId = [
+    [/газпром нефть$/, 'company'],
+    [/тюмень 1|ямал 1|нефтегазета/, 'media'],
+    [/эталон/, 'system'],
+    [/инсайт|брендлист/, 'communication'],
+    [/сеть азс|розетка/, 'network'],
+    [/южно приобский гпз/, 'industrial'],
+    [/арктикгаз|капитан/, 'field'],
+    [/корпоративный университет|cfo|охтацентр/, 'center'],
+    [/профессионалы 4\.0|лига колледжей|люди прогресса/, 'community'],
+    [/энерготехнофест|кустендорф|дни эрмитажа/, 'festival'],
+    [/сказки севера|местные/, 'films-books'],
+    [/ит полигон/, 'technopark'],
+    [/хоккей|научные лагеря|спорт во дворе|чистая среда|водная среда|спортивный полюс|мастера|zajedno|пикник|зеленая среда|шторм|полигон/, 'project'],
+    [/g drive arena/, 'industrial'],
+    [/каркас безопасности/, 'system'],
+    [/n1|акпо|линкон|consta/, 'technology'],
+    [/isource|logitech|leancon|logotech|виджет линк|progress|эффект|element|reserve|finance|inventory/, 'digital-product'],
+    [/startupdrive|mercapp/, 'digital-media'],
+    [/g drive|g lab|битлайт|брит|нефтехимия|биосфера|опти|dda|техактив|газпромнефть ocean/, 'product'],
+    [/drive café|экспертные решения|геобазис|геосфера|геонавигатор|актив будущего|салым петролеум|кедр/, 'service'],
+    [/цифраториум/, 'digital-product']
+  ].find(([pattern]) => pattern.test(key))?.[1] || 'service';
+
+  return objectCategoryById.get(inferredCategoryId);
+}
+
+function getSphereCategory(label, clusterId, group = '') {
+  const key = normalizeBrandKey(label);
+  const groupKey = normalizeBrandKey(group);
+  const inferredSphereId = [
+    [/чистая среда|водная среда|зеленая среда/, 'ecology'],
+    [/хоккей|спорт во дворе|спортивный полюс|шторм|g drive arena|мастера/, 'sport'],
+    [/родные музеи|эрмитаж|музыкальная мастерская|сказки севера|местные|zajedno|кустендорф|пикник/, 'culture'],
+    [/научные лагеря|умножая таланты|математическая прогрессия|грантовый конкурс|лига колледжей/, 'education'],
+    [/арктика медиа|тюмень 1|ямал 1|нефтегазета|инсайт|брендлист|вебнефть|startupdrive|mercapp/, 'media'],
+    [/корпоративный университет|профессионалы 4\.0|люди прогресса/, 'people'],
+    [/cfo|эталон|promine/, 'finance'],
+    [/каркас безопасности/, 'safety'],
+    [/terminal|reserve|inventory|logitech|logotech|leancon|линкон|закупки|складское хозяйство|логистика/, 'logistics'],
+    [/isource|consta|n1|акпо|ит полигон|виджет линк|цифраториум|smart fuel|syntolux|g lab|industrix/, 'technology'],
+    [/g drive|g energy|drive café|сеть азс|розетка|dda|опти|битлайт|брит|газпромнефть ocean|техактив/, 'sales'],
+    [/нефтехимия|биосфера|полиом|южно приобский гпз/, 'production'],
+    [/салым петролеум|актив будущего|геобазис|кедр|мессояханефтегаз|геонавигатор|геосфера|капитан|арктикгаз|меретояханефтегаз/, 'exploration'],
+    [/волонтеры газпром нефти|волонтеры|родные города|экспертные решения|охтацентр/, 'corporate']
+  ].find(([pattern]) => pattern.test(key))?.[1];
+
+  if (inferredSphereId) return sphereCategoryById.get(inferredSphereId);
+  if (clusterId === 'bgi' || groupKey === 'разведка и добыча') return sphereCategoryById.get('exploration');
+  if (clusterId === 'blps') return sphereCategoryById.get(groupKey === 'переработка нефти' ? 'production' : 'sales');
+  if (clusterId === 'bkss') return sphereCategoryById.get(groupKey === 'снабжение' ? 'logistics' : 'technology');
+  if (clusterId === 'dkkrr') return sphereCategoryById.get(groupKey === 'коммуникации' ? 'media' : 'corporate');
+  if (clusterId === 'bef') return sphereCategoryById.get('finance');
+  if (clusterId === 'bbrp') return sphereCategoryById.get('people');
+  if (groupKey === 'производственная безопасность') return sphereCategoryById.get('safety');
+  return sphereCategoryById.get('corporate');
+}
+
+function getAllBrandDefinitions() {
+  return clusters.flatMap(cluster => cluster.groups.flatMap(group => group.brands.flatMap(brand => {
+    if (typeof brand === 'string') return [{ label: brand }];
+    return [{ label: brand.label }, ...(brand.children || []).map(label => ({ label }))];
+  })));
+}
+
+function buildTreeData(mode = 'departments') {
+  const children = mode === 'objects'
+    ? objectCategories.map(category => {
+        const brands = getAllBrandDefinitions()
+          .filter(brand => getObjectCategory(brand.label).id === category.id)
+          .map(brand => ({ label: brand.label, color: category.color, brandLabel: brand.label }));
+        return {
+          label: category.label,
+          color: category.color,
+          groupedCategoryId: category.id,
+          groupedCategoryType: 'object',
+          children: sortTreeNodes(brands)
+        };
+      }).filter(category => category.children.length)
+    : mode === 'spheres'
+      ? sphereCategories.map(category => {
+          const brands = getAllBrandDefinitions()
+            .filter(brand => {
+              const source = clusters.find(cluster => cluster.groups.some(group => group.brands.some(item => (
+                typeof item === 'string'
+                  ? item === brand.label
+                  : item.label === brand.label || (item.children || []).includes(brand.label)
+              ))));
+              const sourceGroup = source?.groups.find(group => group.brands.some(item => (
+                typeof item === 'string'
+                  ? item === brand.label
+                  : item.label === brand.label || (item.children || []).includes(brand.label)
+              )))?.label || '';
+              return getSphereCategory(brand.label, source?.id, sourceGroup).id === category.id;
+            })
+            .map(brand => ({ label: brand.label, color: category.color, brandLabel: brand.label }));
+          return {
+            label: category.label,
+            color: category.color,
+            groupedCategoryId: category.id,
+            groupedCategoryType: 'sphere',
+            children: sortTreeNodes(brands)
+          };
+        }).filter(category => category.children.length)
+    : clusters.map(cluster => ({
+        label: cluster.short,
+        color: cluster.color,
+        graphId: cluster.id,
+        open: cluster.id === 'blps',
+        children: sortTreeNodes(cluster.groups.flatMap(group =>
+          group.brands.map(brand => brandToTreeNode(brand, cluster.color))
+        ))
+      }));
+
+  return [{
+    label: 'Газпром нефть',
+    color: palette.root,
+    graphId: 'root',
+    open: true,
+    children
+  }];
+}
+
+function sortTreeNodes(items) {
+  return items.sort((first, second) => first.label.localeCompare(second.label, 'ru'));
+}
 
 function brandToTreeNode(brand, color) {
   if (typeof brand === 'string') return { label: brand, color, brandLabel: brand };
@@ -181,7 +388,7 @@ function brandToTreeNode(brand, color) {
     label: brand.label,
     color,
     brandLabel: brand.label,
-    children: (brand.children || []).map(child => brandToTreeNode(child, color))
+    children: sortTreeNodes((brand.children || []).map(child => brandToTreeNode(child, color)))
   };
 }
 
@@ -199,6 +406,7 @@ function renderTree(items, parent, depth = 0) {
     row.dataset.clickable = String(Boolean(item.children || item.graphId || item.brandLabel));
     if (item.graphId) row.dataset.graphId = item.graphId;
     if (item.brandLabel) row.dataset.brandLabel = item.brandLabel;
+    if (item.groupedCategoryId) row.dataset.groupedFocusId = getGroupedFocusId(item.groupedCategoryType, item.groupedCategoryId);
     row.title = item.label;
     row.innerHTML = `<span class="chevron ${item.children ? '' : 'is-empty'}"></span><span class="tree-dot" style="--dot:${item.color || '#8ca2b3'}"></span><span class="tree-label">${item.label}</span>`;
 
@@ -217,6 +425,12 @@ function renderTree(items, parent, depth = 0) {
           openDetailPanel(brandNode);
         }
       }
+      if (item.groupedCategoryId) {
+        const category = getGroupedCategory(item.groupedCategoryType, item.groupedCategoryId);
+        closeDetailPanel();
+        setGroupedCategoryFocus(item.groupedCategoryType, item.groupedCategoryId, true);
+        if (category) zoomToNode(category.position, 1.55);
+      }
     });
     row.addEventListener('mouseenter', () => {
       if (item.graphId) setFocus(item.graphId, false);
@@ -224,8 +438,9 @@ function renderTree(items, parent, depth = 0) {
         const brandNode = findBrandNode(item.brandLabel);
         if (brandNode) setFocus(getNodeFocusId(brandNode), false);
       }
+      if (item.groupedCategoryId) setGroupedCategoryFocus(item.groupedCategoryType, item.groupedCategoryId, false);
     });
-    row.addEventListener('mouseleave', () => (item.graphId || item.brandLabel) && !pinnedId && clearFocus());
+    row.addEventListener('mouseleave', () => (item.graphId || item.brandLabel || item.groupedCategoryId) && !pinnedId && clearFocus());
     entry.appendChild(row);
 
     if (item.children) {
@@ -240,9 +455,79 @@ function renderTree(items, parent, depth = 0) {
   parent.appendChild(list);
 }
 
-renderTree(treeData, document.getElementById('tree'));
+const tree = document.getElementById('tree');
+const displayModeButton = document.getElementById('display-mode-button');
+const displayModeValue = document.getElementById('display-mode-value');
+const displayModeList = document.getElementById('display-mode-list');
+const displayModeOptions = [...displayModeList.querySelectorAll('.display-mode-option')];
+let displayMode = 'spheres';
+let pinnedId = null;
 
-const rootNode = { id: 'root', label: 'Газпром нефть', x: 581, y: 490, r: 10, color: palette.root, font: 18, weight: 500 };
+function renderNavigationTree() {
+  tree.replaceChildren();
+  renderTree(buildTreeData(displayMode), tree);
+}
+
+function closeDisplayModeList() {
+  displayModeList.hidden = true;
+  displayModeButton.setAttribute('aria-expanded', 'false');
+}
+
+function openDisplayModeList() {
+  displayModeList.hidden = false;
+  displayModeButton.setAttribute('aria-expanded', 'true');
+}
+
+function selectDisplayMode(option) {
+  displayMode = option.dataset.value;
+  if (pinnedId?.startsWith('grouped:') && !pinnedId.startsWith(`grouped:${displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'department'}:`)) {
+    pinnedId = null;
+  }
+  displayModeValue.textContent = option.textContent;
+  displayModeOptions.forEach(item => {
+    const isSelected = item === option;
+    item.classList.toggle('is-selected', isSelected);
+    item.setAttribute('aria-selected', String(isSelected));
+  });
+  closeDisplayModeList();
+  renderNavigationTree();
+  applyDisplayModeColors();
+  const selectedNode = pinnedId ? nodeById.get(pinnedId) : null;
+  if (selectedNode?.clusterId) markSelectedTreeBrand(selectedNode.label);
+  displayModeButton.focus();
+}
+
+renderNavigationTree();
+displayModeButton.addEventListener('click', () => {
+  if (displayModeList.hidden) openDisplayModeList();
+  else closeDisplayModeList();
+});
+displayModeButton.addEventListener('keydown', event => {
+  if (event.key !== 'ArrowDown') return;
+  event.preventDefault();
+  openDisplayModeList();
+  (displayModeOptions.find(option => option.dataset.value === displayMode) || displayModeOptions[0]).focus();
+});
+displayModeOptions.forEach((option, index) => {
+  option.addEventListener('click', () => selectDisplayMode(option));
+  option.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeDisplayModeList();
+      displayModeButton.focus();
+      return;
+    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    displayModeOptions[(index + direction + displayModeOptions.length) % displayModeOptions.length].focus();
+  });
+});
+document.addEventListener('pointerdown', event => {
+  if (!event.target.closest('.display-mode-control')) closeDisplayModeList();
+});
+
+const rootNode = { id: 'root', label: 'Газпром нефть', x: 581, y: 490, r: 10, color: palette.root, departmentColor: palette.root, font: 18, weight: 500 };
 const nodes = [rootNode];
 const edges = [];
 
@@ -281,7 +566,7 @@ function countClusterBrands(cluster) {
 }
 
 function addClusterNodes(cluster) {
-  nodes.push({ id: cluster.id, label: cluster.short, x: cluster.x, y: cluster.y, r: 7, color: cluster.color, font: 12, weight: 500 });
+  nodes.push({ id: cluster.id, label: cluster.short, x: cluster.x, y: cluster.y, r: 7, color: cluster.color, departmentColor: cluster.color, objectCategory: objectCategoryById.get('division'), font: 12, weight: 500 });
   edges.push({ source: 'root', target: cluster.id, color: cluster.color });
 
   const topLevelBrands = cluster.groups.flatMap(group => group.brands.map(brand => ({
@@ -326,6 +611,9 @@ function addClusterNodes(cluster) {
         y: Math.max(24, Math.min(936, point.y)),
         r: 4.5,
         color: cluster.color,
+        departmentColor: cluster.color,
+        objectCategory: getObjectCategory(brand.label),
+        sphereCategory: getSphereCategory(brand.label, cluster.id, brand.group),
         font: 8.5
       });
       edges.push({ source: cluster.id, target: id, color: cluster.color });
@@ -361,6 +649,9 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
       y: point.y,
       r: isParentBrand ? 6 : 4.5,
       color: cluster.color,
+      departmentColor: cluster.color,
+      objectCategory: getObjectCategory(brand.label),
+      sphereCategory: getSphereCategory(brand.label, cluster.id, brand.group),
       font: isParentBrand ? 10 : 8.5,
       weight: isParentBrand ? 500 : 400
     });
@@ -380,7 +671,7 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
           const childAngle = count === 1 ? angle : start + index * step;
           const childPoint = polarPoint(rootNode.x, rootNode.y, radius, childAngle);
           const childId = `${id}-child-${childIndex}`;
-          nodes.push({ id: childId, label, group: brand.label, clusterId: cluster.id, parentId: id, x: childPoint.x, y: childPoint.y, r: 4.5, color: cluster.color, font: 8.5 });
+          nodes.push({ id: childId, label, group: brand.label, clusterId: cluster.id, parentId: id, x: childPoint.x, y: childPoint.y, r: 4.5, color: cluster.color, departmentColor: cluster.color, objectCategory: getObjectCategory(label), sphereCategory: getSphereCategory(label, cluster.id, brand.group), font: 8.5 });
           edges.push({ source: id, target: childId, color: cluster.color });
           childIndex += 1;
         }
@@ -410,6 +701,139 @@ function getRingCounts(total) {
 }
 
 clusters.forEach(addClusterNodes);
+rootNode.objectCategory = objectCategoryById.get('company');
+nodes.forEach(node => {
+  node.departmentX = node.x;
+  node.departmentY = node.y;
+});
+
+const objectBrandPositions = new Map();
+const objectLayoutCategories = objectCategories.map(category => ({
+  ...category,
+  brands: nodes.filter(node => node.clusterId && node.objectCategory?.id === category.id)
+})).filter(category => category.brands.length);
+
+function prepareObjectLayout() {
+  const gap = 3;
+  const availableDegrees = 360 - gap * objectLayoutCategories.length;
+  const totalWeight = objectLayoutCategories.reduce((sum, category) => sum + Math.max(12, category.brands.length), 0);
+  let cursor = -174;
+
+  objectLayoutCategories.forEach(category => {
+    const sectorSize = availableDegrees * Math.max(12, category.brands.length) / totalWeight;
+    category.sectorStart = cursor + gap / 2;
+    category.sectorEnd = cursor + sectorSize - gap / 2;
+    category.angle = (category.sectorStart + category.sectorEnd) / 2;
+    const categoryPointAngle = category.angle + (category.id === 'industrial' ? -1.5 : category.id === 'field' ? 1.5 : 0);
+    category.position = polarPoint(rootNode.x, rootNode.y, 182, categoryPointAngle);
+
+    const rings = getObjectRingCounts(category.brands.length, sectorSize);
+    let brandIndex = 0;
+    rings.forEach((count, ringIndex) => {
+      const radius = rings.length === 1 ? 350 : 340 + ringIndex * 74;
+      const inset = Math.min(1.5, Math.max(.35, sectorSize * .06));
+      const start = category.sectorStart + inset;
+      const end = category.sectorEnd - inset;
+      const step = count === 1 ? 0 : (end - start) / (count - 1);
+      for (let index = 0; index < count; index += 1) {
+        const node = category.brands[brandIndex];
+        const angle = count === 1 ? category.angle : start + index * step;
+        const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
+        objectBrandPositions.set(node.id, {
+          x: Math.max(24, Math.min(1138, point.x)),
+          y: Math.max(24, Math.min(936, point.y))
+        });
+        brandIndex += 1;
+      }
+    });
+
+    cursor += sectorSize + gap;
+  });
+}
+
+prepareObjectLayout();
+
+const sphereBrandPositions = new Map();
+const sphereLayoutCategories = sphereCategories.map(category => ({
+  ...category,
+  brands: nodes.filter(node => node.clusterId && node.sphereCategory?.id === category.id)
+})).filter(category => category.brands.length);
+
+function prepareSphereLayout() {
+  const gap = 3;
+  const availableDegrees = 360 - gap * sphereLayoutCategories.length;
+  const totalWeight = sphereLayoutCategories.reduce((sum, category) => sum + Math.max(10, category.brands.length), 0);
+  let cursor = -174;
+
+  sphereLayoutCategories.forEach(category => {
+    const sectorSize = availableDegrees * Math.max(10, category.brands.length) / totalWeight;
+    category.sectorStart = cursor + gap / 2;
+    category.sectorEnd = cursor + sectorSize - gap / 2;
+    category.angle = (category.sectorStart + category.sectorEnd) / 2;
+    category.position = polarPoint(rootNode.x, rootNode.y, 182, category.angle);
+
+    const rings = getObjectRingCounts(category.brands.length, sectorSize);
+    let brandIndex = 0;
+    rings.forEach((count, ringIndex) => {
+      const radius = rings.length === 1 ? 350 : 338 + ringIndex * 72;
+      const inset = Math.min(1.5, Math.max(.35, sectorSize * .06));
+      const start = category.sectorStart + inset;
+      const end = category.sectorEnd - inset;
+      const step = count === 1 ? 0 : (end - start) / (count - 1);
+      for (let index = 0; index < count; index += 1) {
+        const node = category.brands[brandIndex];
+        const angle = count === 1 ? category.angle : start + index * step;
+        const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
+        sphereBrandPositions.set(node.id, {
+          x: Math.max(24, Math.min(1138, point.x)),
+          y: Math.max(24, Math.min(936, point.y))
+        });
+        brandIndex += 1;
+      }
+    });
+
+    cursor += sectorSize + gap;
+  });
+}
+
+prepareSphereLayout();
+
+function getObjectRingCounts(total, sectorSize) {
+  const counts = [];
+  let remaining = total;
+  let ringIndex = 0;
+  while (remaining > 0) {
+    const radius = 340 + ringIndex * 74;
+    const arcLength = radius * sectorSize * Math.PI / 180;
+    const capacity = Math.max(1, Math.floor(arcLength / 22) + 1);
+    const count = Math.min(remaining, capacity);
+    counts.push(count);
+    remaining -= count;
+    ringIndex += 1;
+  }
+  return counts;
+}
+
+function getNodeDisplayColor(node) {
+  if (node.id === 'root') return palette.root;
+  if (displayMode === 'spheres') return node.sphereCategory?.color || sphereCategoryById.get('corporate').color;
+  return displayMode === 'objects'
+    ? node.objectCategory?.color || objectCategoryById.get('service').color
+    : node.departmentColor;
+}
+
+function applyDisplayModeColors() {
+  if (typeof nodeById === 'undefined') return;
+  nodes.forEach(node => {
+    node.color = getNodeDisplayColor(node);
+    const circle = document.querySelector(`.node-group[data-id="${CSS.escape(node.id)}"] .node-dot`);
+    if (circle) circle.setAttribute('fill', node.color);
+  });
+  applyDisplayModeLayout();
+  if (!brandSearchResults.hidden) renderSearchResults();
+  const selectedNode = pinnedId ? nodeById.get(pinnedId) : null;
+  if (selectedNode && !brandLogoFiles[selectedNode.label]) detailLogoText.style.color = selectedNode.color;
+}
 
 function getStableBrandScore(label) {
   return [...label].reduce((score, character, index) => score + character.charCodeAt(0) * (index + 1), 0) % 10000;
@@ -481,6 +905,7 @@ const svg = document.getElementById('graph');
 const namespace = 'http://www.w3.org/2000/svg';
 const nodeById = new Map(nodes.map(node => [node.id, node]));
 const semanticZoomToggle = document.getElementById('semantic-zoom-toggle');
+const animationToggle = document.getElementById('animation-toggle');
 
 const brandSearchInput = document.getElementById('brand-search-input');
 const brandSearchClear = document.getElementById('brand-search-clear');
@@ -637,6 +1062,31 @@ function addWrappedLabel(group, node) {
   group.appendChild(text);
 }
 
+const nonBreakingLabelWords = new Set([
+  'а', 'без', 'в', 'во', 'для', 'до', 'за', 'и', 'из', 'к', 'ко', 'на', 'над',
+  'но', 'о', 'об', 'от', 'по', 'под', 'при', 'с', 'со', 'у'
+]);
+
+function getTypographicLabelTokens(label) {
+  const words = label.trim().split(/\s+/);
+  const tokens = [];
+  for (let index = 0; index < words.length; index += 1) {
+    const word = words[index];
+    const normalizedWord = word.toLocaleLowerCase('ru').replace(/[.,:;!?]/g, '');
+    if (nonBreakingLabelWords.has(normalizedWord) && index + 1 < words.length) {
+      tokens.push(`${word}\u00a0${words[index + 1]}`);
+      index += 1;
+    } else {
+      tokens.push(word);
+    }
+  }
+  return tokens;
+}
+
+function getTypographicLabel(label) {
+  return getTypographicLabelTokens(label).join(' ');
+}
+
 const edgeLayer = createSvgElement('g', { class: 'edge-layer' });
 edges.forEach((edge, index) => {
   const source = nodeById.get(edge.source);
@@ -676,6 +1126,7 @@ hoverLogoLayer.appendChild(hoverLogoCard);
 nodes.forEach(node => {
   const group = createSvgElement('g', { class: 'node-group', tabindex: '0', role: 'button', 'aria-label': node.label });
   group.dataset.id = node.id;
+  if (node.id !== 'root' && !node.clusterId) group.classList.add('is-cluster-node');
   if (node.clusterId) group.dataset.clusterId = node.clusterId;
   if (node.visibilityTier !== undefined) group.dataset.visibilityTier = node.visibilityTier;
   const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
@@ -713,8 +1164,339 @@ nodes.forEach(node => {
   });
 });
 svg.appendChild(nodeLayer);
+
+const objectGraphLayer = createSvgElement('g', { class: 'object-graph-layer', 'aria-hidden': 'true' });
+const objectEdgeLayer = createSvgElement('g', { class: 'object-edge-layer' });
+const objectCategoryLayer = createSvgElement('g', { class: 'object-category-layer' });
+
+objectLayoutCategories.forEach(category => {
+  const categoryId = `object-category-${category.id}`;
+  const rootLine = createSvgElement('line', {
+    x1: rootNode.x,
+    y1: rootNode.y,
+    x2: category.position.x,
+    y2: category.position.y,
+    class: 'edge object-edge'
+  });
+  rootLine.dataset.categoryId = category.id;
+  rootLine.dataset.target = categoryId;
+  objectEdgeLayer.appendChild(rootLine);
+
+  category.brands.forEach(node => {
+    const point = objectBrandPositions.get(node.id);
+    const line = createSvgElement('line', {
+      x1: category.position.x,
+      y1: category.position.y,
+      x2: point.x,
+      y2: point.y,
+      class: 'edge object-edge'
+    });
+    line.dataset.categoryId = category.id;
+    line.dataset.target = node.id;
+    if (node.visibilityTier !== undefined) line.dataset.visibilityTier = node.visibilityTier;
+    objectEdgeLayer.appendChild(line);
+  });
+
+  const group = createSvgElement('g', { class: 'object-category-group' });
+  group.dataset.categoryId = category.id;
+  const dot = createSvgElement('circle', {
+    class: 'object-category-dot',
+    cx: category.position.x,
+    cy: category.position.y,
+    r: 7,
+    fill: category.color
+  });
+  const labelX = category.position.x;
+  const labelY = category.position.y + 22;
+  const labelAnchor = 'middle';
+  const label = createSvgElement('text', {
+    class: 'object-category-label',
+    x: labelX,
+    y: labelY,
+    'font-family': 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif',
+    'font-size': 9,
+    'font-weight': 500,
+    fill: '#002033',
+    'text-anchor': labelAnchor
+  });
+  const words = getTypographicLabelTokens(category.label);
+  const customLines = {
+    communication: ['Коммуника-', 'ционная', 'платформа']
+  };
+  const lines = customLines[category.id] || [''];
+  if (!customLines[category.id]) {
+    words.forEach(word => {
+      const current = lines[lines.length - 1];
+      if (current && `${current} ${word}`.length > 12 && lines.length < 2) lines.push(word);
+      else lines[lines.length - 1] = current ? `${current} ${word}` : word;
+    });
+  }
+  lines.forEach((line, index) => {
+    const tspan = createSvgElement('tspan', { x: labelX, dy: index === 0 ? 0 : 10 });
+    tspan.textContent = line;
+    label.appendChild(tspan);
+  });
+  group.append(dot, label);
+  objectCategoryLayer.appendChild(group);
+});
+
+objectGraphLayer.append(objectEdgeLayer, objectCategoryLayer);
+svg.insertBefore(objectGraphLayer, nodeLayer);
+
+function createGroupedGraphLayer(type, categories, positions) {
+  const graphLayer = createSvgElement('g', { class: `${type}-graph-layer`, 'aria-hidden': 'true' });
+  const edgeLayer = createSvgElement('g', { class: `${type}-edge-layer` });
+  const categoryLayer = createSvgElement('g', { class: `${type}-category-layer` });
+
+  categories.forEach(category => {
+    const categoryId = `${type}-category-${category.id}`;
+    const rootLine = createSvgElement('line', {
+      x1: rootNode.x,
+      y1: rootNode.y,
+      x2: category.position.x,
+      y2: category.position.y,
+      class: `edge ${type}-edge`
+    });
+    rootLine.dataset.categoryId = category.id;
+    rootLine.dataset.target = categoryId;
+    edgeLayer.appendChild(rootLine);
+
+    category.brands.forEach(node => {
+      const point = positions.get(node.id);
+      const line = createSvgElement('line', {
+        x1: category.position.x,
+        y1: category.position.y,
+        x2: point.x,
+        y2: point.y,
+        class: `edge ${type}-edge`
+      });
+      line.dataset.categoryId = category.id;
+      line.dataset.target = node.id;
+      if (node.visibilityTier !== undefined) line.dataset.visibilityTier = node.visibilityTier;
+      edgeLayer.appendChild(line);
+    });
+
+    const group = createSvgElement('g', { class: `${type}-category-group` });
+    group.dataset.categoryId = category.id;
+    const dot = createSvgElement('circle', {
+      class: `${type}-category-dot`,
+      cx: category.position.x,
+      cy: category.position.y,
+      r: 7,
+      fill: category.color
+    });
+    const labelX = category.position.x;
+    const labelY = category.position.y + 22;
+    const labelAnchor = 'middle';
+    const label = createSvgElement('text', {
+      class: `${type}-category-label`,
+      x: labelX,
+      y: labelY,
+      'font-family': 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif',
+      'font-size': 9,
+      'font-weight': 500,
+      fill: '#002033',
+      'text-anchor': labelAnchor
+    });
+    const words = getTypographicLabelTokens(category.label);
+    const lines = [''];
+    words.forEach(word => {
+      const current = lines[lines.length - 1];
+      if (current && `${current} ${word}`.length > 18 && lines.length < 2) lines.push(word);
+      else lines[lines.length - 1] = current ? `${current} ${word}` : word;
+    });
+    lines.forEach((line, index) => {
+      const tspan = createSvgElement('tspan', { x: labelX, dy: index === 0 ? 0 : 10 });
+      tspan.textContent = line;
+      label.appendChild(tspan);
+    });
+    group.append(dot, label);
+    categoryLayer.appendChild(group);
+  });
+
+  graphLayer.append(edgeLayer, categoryLayer);
+  return graphLayer;
+}
+
+const sphereGraphLayer = createGroupedGraphLayer('sphere', sphereLayoutCategories, sphereBrandPositions);
+svg.insertBefore(sphereGraphLayer, nodeLayer);
 svg.appendChild(hoverLogoLayer);
 document.fonts.ready.then(resolveLabelCollisions);
+
+function attachGroupedCategoryInteractions(type, categories, graphLayer) {
+  categories.forEach(category => {
+    const group = graphLayer.querySelector(`.${type}-category-group[data-category-id="${category.id}"]`);
+    if (!group) return;
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('role', 'button');
+    group.setAttribute('aria-label', category.label);
+    group.addEventListener('mouseenter', () => setGroupedCategoryFocus(type, category.id, false));
+    group.addEventListener('mouseleave', () => !pinnedId && clearFocus());
+    group.addEventListener('click', () => {
+      closeDetailPanel();
+      setGroupedCategoryFocus(type, category.id, true);
+      zoomToNode(category.position, 1.55);
+    });
+    group.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      closeDetailPanel();
+      setGroupedCategoryFocus(type, category.id, true);
+      zoomToNode(category.position, 1.55);
+    });
+  });
+}
+
+attachGroupedCategoryInteractions('object', objectLayoutCategories, objectGraphLayer);
+attachGroupedCategoryInteractions('sphere', sphereLayoutCategories, sphereGraphLayer);
+
+const nodeAnimationItems = nodes
+  .filter(node => node.id !== 'root')
+  .map(node => ({ node, group: document.querySelector(`.node-group[data-id="${CSS.escape(node.id)}"]`) }));
+const departmentEdgeAnimationItems = edges.map((edge, index) => ({
+  edge,
+  line: edgeLayer.children[index],
+  source: nodeById.get(edge.source),
+  target: nodeById.get(edge.target)
+}));
+
+function getMotionVector(key, time, amplitude = 6) {
+  const seed = [...key].reduce((value, character, index) => value + character.charCodeAt(0) * (index + 3), 0);
+  const phase = seed * .017;
+  return {
+    x: Math.sin(time * .0008 + phase) * amplitude,
+    y: Math.cos(time * .00065 + phase * 1.31) * amplitude
+  };
+}
+
+function getGroupedAnimationItems(type, categories, graphLayer) {
+  return categories.map(category => ({
+    category,
+    group: graphLayer.querySelector(`.${type}-category-group[data-category-id="${category.id}"]`),
+    rootLine: graphLayer.querySelector(`.${type}-edge[data-target="${type}-category-${category.id}"]`),
+    brandLines: category.brands.map(node => ({
+      node,
+      line: graphLayer.querySelector(`.${type}-edge[data-target="${CSS.escape(node.id)}"]`)
+    }))
+  }));
+}
+
+const objectAnimationItems = getGroupedAnimationItems('object', objectLayoutCategories, objectGraphLayer);
+const sphereAnimationItems = getGroupedAnimationItems('sphere', sphereLayoutCategories, sphereGraphLayer);
+let ambientAnimationFrame = null;
+
+function updateGroupedAnimation(items, time, active) {
+  items.forEach(item => {
+    const type = item.group?.classList.contains('object-category-group') ? 'object' : 'sphere';
+    const categoryOffset = active ? getMotionVector(`${type}-category-${item.category.id}`, time, 5) : { x: 0, y: 0 };
+    item.group?.setAttribute('transform', active ? `translate(${categoryOffset.x.toFixed(2)} ${categoryOffset.y.toFixed(2)})` : '');
+    item.rootLine?.setAttribute('x2', item.category.position.x + categoryOffset.x);
+    item.rootLine?.setAttribute('y2', item.category.position.y + categoryOffset.y);
+    item.brandLines.forEach(({ node, line }) => {
+      line?.setAttribute('x1', item.category.position.x + categoryOffset.x);
+      line?.setAttribute('y1', item.category.position.y + categoryOffset.y);
+      line?.setAttribute('x2', node.x + categoryOffset.x);
+      line?.setAttribute('y2', node.y + categoryOffset.y);
+    });
+  });
+}
+
+function renderAmbientAnimation(time = 0) {
+  const active = animationToggle.checked;
+  svg.classList.toggle('is-ambient-animated', active);
+  const nodeOffsets = new Map();
+
+  nodeAnimationItems.forEach(({ node, group }) => {
+    const category = displayMode === 'objects'
+      ? node.objectCategory
+      : displayMode === 'spheres'
+        ? node.sphereCategory
+        : null;
+    const motionKey = category
+      ? `${displayMode === 'objects' ? 'object' : 'sphere'}-category-${category.id}`
+      : `department-${node.clusterId || node.id}`;
+    const offset = active ? getMotionVector(motionKey, time, 5) : { x: 0, y: 0 };
+    nodeOffsets.set(node.id, offset);
+    if (active) group?.setAttribute('transform', `translate(${offset.x.toFixed(2)} ${offset.y.toFixed(2)})`);
+    else group?.removeAttribute('transform');
+  });
+
+  departmentEdgeAnimationItems.forEach(({ line, source, target }) => {
+    const sourceOffset = nodeOffsets.get(source.id) || { x: 0, y: 0 };
+    const targetOffset = nodeOffsets.get(target.id) || { x: 0, y: 0 };
+    line.setAttribute('x1', source.x + sourceOffset.x);
+    line.setAttribute('y1', source.y + sourceOffset.y);
+    line.setAttribute('x2', target.x + targetOffset.x);
+    line.setAttribute('y2', target.y + targetOffset.y);
+  });
+
+  updateGroupedAnimation(objectAnimationItems, time, active);
+  updateGroupedAnimation(sphereAnimationItems, time, active);
+
+  if (active) ambientAnimationFrame = requestAnimationFrame(renderAmbientAnimation);
+  else ambientAnimationFrame = null;
+}
+
+function setAmbientAnimationEnabled() {
+  if (ambientAnimationFrame) cancelAnimationFrame(ambientAnimationFrame);
+  ambientAnimationFrame = null;
+  renderAmbientAnimation(performance.now());
+}
+
+function setNodePosition(node, point) {
+  node.x = point.x;
+  node.y = point.y;
+  const group = document.querySelector(`.node-group[data-id="${CSS.escape(node.id)}"]`);
+  if (!group) return;
+  const hitArea = group.querySelector('.node-hit-area');
+  const dot = group.querySelector('.node-dot');
+  const label = group.querySelector('.node-label');
+  hitArea?.setAttribute('cx', point.x);
+  hitArea?.setAttribute('cy', point.y);
+  dot?.setAttribute('cx', point.x);
+  dot?.setAttribute('cy', point.y);
+  if (!label) return;
+  label.setAttribute('x', point.x);
+  label.setAttribute('y', point.y + node.r + (node.id === 'root' ? 23 : 15));
+  label.removeAttribute('transform');
+  delete label.dataset.collisionTransform;
+  label.querySelectorAll('tspan').forEach(tspan => tspan.setAttribute('x', point.x));
+}
+
+function applyDisplayModeLayout() {
+  const isObjectMode = displayMode === 'objects';
+  const isSphereMode = displayMode === 'spheres';
+  svg.classList.toggle('is-object-mode', isObjectMode);
+  svg.classList.toggle('is-sphere-mode', isSphereMode);
+  objectGraphLayer.setAttribute('aria-hidden', String(!isObjectMode));
+  sphereGraphLayer.setAttribute('aria-hidden', String(!isSphereMode));
+
+  nodes.forEach(node => {
+    if (node.id === 'root') return;
+    const point = node.clusterId
+      ? isObjectMode
+        ? objectBrandPositions.get(node.id)
+        : isSphereMode
+          ? sphereBrandPositions.get(node.id)
+          : { x: node.departmentX, y: node.departmentY }
+      : { x: node.departmentX, y: node.departmentY };
+    if (point) setNodePosition(node, point);
+  });
+
+  hideHoverLogo();
+  hideTooltip();
+  requestAnimationFrame(() => {
+    resolveLabelCollisions();
+    if (pinnedId) {
+      setFocus(pinnedId, true);
+      const selectedNode = nodeById.get(pinnedId);
+      if (selectedNode) zoomToNode(selectedNode);
+    } else {
+      clearFocus();
+      resetZoom();
+    }
+  });
+}
 
 function showHoverLogo(node) {
   const logoFile = brandLogoFiles[node.label];
@@ -759,8 +1541,15 @@ function resolveLabelCollisions() {
     .filter(label => nodeById.get(label.parentElement.dataset.id)?.font < 12)
     .map(label => ({ label, box: label.getBBox() }))
     .sort((first, second) => second.box.width * second.box.height - first.box.width * first.box.height);
-  const dots = [...document.querySelectorAll('.node-group .node-dot')].map(dot => dot.getBBox());
-  const placed = [];
+  const dots = [...document.querySelectorAll('.node-group .node-dot')]
+    .filter(dot => !['objects', 'spheres'].includes(displayMode) || !dot.closest('.is-cluster-node'))
+    .map(dot => dot.getBBox());
+  if (['objects', 'spheres'].includes(displayMode)) {
+    document.querySelectorAll(`.${displayMode === 'objects' ? 'object' : 'sphere'}-category-dot`).forEach(dot => dots.push(dot.getBBox()));
+  }
+  const placed = ['objects', 'spheres'].includes(displayMode)
+    ? [...document.querySelectorAll(`.${displayMode === 'objects' ? 'object' : 'sphere'}-category-label`)].map(label => label.getBBox())
+    : [];
 
   const intersects = (first, second) => (
     first.x < second.x + second.width + padding
@@ -770,19 +1559,16 @@ function resolveLabelCollisions() {
   );
 
   labels.forEach(item => {
-    const centerX = item.box.x + item.box.width / 2;
-    const centerY = item.box.y + item.box.height / 2;
-    const outwardAngle = Math.atan2(centerY - rootNode.y, centerX - rootNode.x);
+    const minimumShiftX = margin - item.box.x;
+    const maximumShiftX = bounds.width - margin - item.box.x - item.box.width;
+    const edgeShiftX = Math.max(minimumShiftX, Math.min(0, maximumShiftX));
     let position = null;
 
     for (let radius = 0; radius <= 180 && !position; radius += 6) {
-      const directions = radius === 0 ? 1 : 24;
-      for (let direction = 0; direction < directions; direction += 1) {
-        const angle = outwardAngle + direction * Math.PI * 2 / directions;
-        const shiftX = radius === 0 ? 0 : Math.cos(angle) * radius;
-        const shiftY = radius === 0 ? 0 : Math.sin(angle) * radius;
+      const verticalShifts = radius === 0 ? [0] : [radius, -radius];
+      for (const shiftY of verticalShifts) {
         const candidate = {
-          x: item.box.x + shiftX,
+          x: item.box.x + edgeShiftX,
           y: item.box.y + shiftY,
           width: item.box.width,
           height: item.box.height
@@ -793,7 +1579,7 @@ function resolveLabelCollisions() {
           && candidate.y + candidate.height <= bounds.height - margin;
 
         if (!inside || dots.some(dot => intersects(candidate, dot)) || placed.some(label => intersects(candidate, label))) continue;
-        position = { shiftX, shiftY, ...candidate };
+        position = { shiftX: edgeShiftX, shiftY, ...candidate };
         break;
       }
     }
@@ -810,15 +1596,13 @@ function resolveLabelCollisions() {
     const collisionTransform = `translate(${resolved.shiftX.toFixed(2)} ${resolved.shiftY.toFixed(2)})`;
     item.label.dataset.collisionTransform = collisionTransform;
     item.label.setAttribute('transform', collisionTransform);
-    if (item.label.parentElement.classList.contains('is-active')) item.label.removeAttribute('transform');
   });
 }
 
 function restoreLabelPosition(group) {
   const label = group.querySelector('.node-label');
   if (!label) return;
-  if (group.classList.contains('is-active')) label.removeAttribute('transform');
-  else if (label.dataset.collisionTransform) label.setAttribute('transform', label.dataset.collisionTransform);
+  if (label.dataset.collisionTransform) label.setAttribute('transform', label.dataset.collisionTransform);
 }
 
 function getNodeFocusId(node) {
@@ -955,14 +1739,16 @@ function updateBrandVisibility(zoom) {
 document.getElementById('zoom-out').addEventListener('click', () => zoomBy(1 / 1.35));
 document.getElementById('zoom-in').addEventListener('click', () => zoomBy(1.35));
 semanticZoomToggle.addEventListener('change', () => updateBrandVisibility(baseViewBox.width / currentViewBox.width));
+animationToggle.addEventListener('change', setAmbientAnimationEnabled);
 updateZoomButtons();
+setAmbientAnimationEnabled();
 
 let panState = null;
 let suppressNodeClick = false;
 
 svg.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
-  if (event.target.closest('.node-group')) return;
+  if (event.target.closest('.node-group, .object-category-group, .sphere-category-group')) return;
   if (viewBoxAnimation) cancelAnimationFrame(viewBoxAnimation);
   viewBoxAnimation = null;
   panState = {
@@ -1011,7 +1797,57 @@ svg.addEventListener('wheel', event => {
   zoomAtPoint(event.clientX, event.clientY, Math.exp(-event.deltaY * .0015));
 }, { passive: false });
 
-let pinnedId = null;
+function getGroupedFocusId(type, categoryId) {
+  return `grouped:${type}:${categoryId}`;
+}
+
+function getGroupedCategory(type, categoryId) {
+  const categories = type === 'object' ? objectLayoutCategories : sphereLayoutCategories;
+  return categories.find(category => category.id === categoryId);
+}
+
+function getGroupedFocusData(focusId) {
+  if (!focusId?.startsWith('grouped:')) return null;
+  const [, type, categoryId] = focusId.split(':');
+  const category = getGroupedCategory(type, categoryId);
+  return category ? { type, categoryId, category } : null;
+}
+
+function applyGroupedCategoryFocus(type, categoryId) {
+  const category = getGroupedCategory(type, categoryId);
+  if (!category) return clearFocus();
+  const selectedBrandIds = new Set(category.brands.map(node => node.id));
+  const focusId = getGroupedFocusId(type, categoryId);
+  svg.classList.add('has-focus');
+  document.querySelectorAll('.node-group').forEach(group => {
+    const connected = group.dataset.id === 'root' || selectedBrandIds.has(group.dataset.id);
+    group.classList.remove('is-active');
+    group.classList.toggle('is-connected', connected);
+    restoreLabelPosition(group);
+  });
+  document.querySelectorAll('.edge').forEach(line => line.classList.remove('is-connected'));
+  document.querySelectorAll(`.${type}-category-group`).forEach(group => {
+    const selected = group.dataset.categoryId === categoryId;
+    group.classList.toggle('is-active', selected);
+    group.classList.toggle('is-connected', selected);
+  });
+  document.querySelectorAll(`.${type}-edge`).forEach(line => {
+    line.classList.toggle('is-connected', line.dataset.categoryId === categoryId);
+  });
+  document.querySelectorAll('.tree-row').forEach(row => {
+    row.classList.toggle('is-active', row.dataset.groupedFocusId === focusId);
+  });
+  updateBrandVisibility(baseViewBox.width / currentViewBox.width);
+}
+
+function setGroupedCategoryFocus(type, categoryId, pin) {
+  const requestedFocusId = getGroupedFocusId(type, categoryId);
+  if (!pin && pinnedId && !getGroupedFocusData(pinnedId)) return setFocus(pinnedId, false);
+  if (pin) pinnedId = requestedFocusId;
+  const focusData = getGroupedFocusData(pinnedId || requestedFocusId);
+  if (!focusData) return clearFocus();
+  applyGroupedCategoryFocus(focusData.type, focusData.categoryId);
+}
 
 function getFocusPathIds(focusId) {
   const adjacency = new Map();
@@ -1067,6 +1903,8 @@ function setFocus(id, pin) {
   if (pin) pinnedId = id;
   const focusId = pin ? pinnedId : pinnedId || id;
   if (!focusId) return clearFocus();
+  const groupedFocus = getGroupedFocusData(focusId);
+  if (groupedFocus) return applyGroupedCategoryFocus(groupedFocus.type, groupedFocus.categoryId);
 
   const focusPathIds = getFocusSelectionIds(focusId);
   svg.classList.add('has-focus');
@@ -1080,6 +1918,20 @@ function setFocus(id, pin) {
     line.classList.toggle('is-connected', focusPathIds.has(line.dataset.source) && focusPathIds.has(line.dataset.target));
   });
   document.querySelectorAll('.tree-row').forEach(row => row.classList.toggle('is-active', row.dataset.graphId === focusId));
+  if (displayMode === 'objects' || displayMode === 'spheres') {
+    const type = displayMode === 'objects' ? 'object' : 'sphere';
+    const categoryProperty = displayMode === 'objects' ? 'objectCategory' : 'sphereCategory';
+    const selectedBrandIds = new Set([...focusPathIds].filter(nodeId => nodeById.get(nodeId)?.clusterId));
+    const selectedCategoryIds = new Set([...selectedBrandIds].map(nodeId => nodeById.get(nodeId)?.[categoryProperty]?.id).filter(Boolean));
+    document.querySelectorAll(`.${type}-category-group`).forEach(group => {
+      group.classList.toggle('is-connected', selectedCategoryIds.has(group.dataset.categoryId));
+    });
+    document.querySelectorAll(`.${type}-edge`).forEach(line => {
+      const categorySelected = selectedCategoryIds.has(line.dataset.categoryId);
+      const isCategoryEdge = line.dataset.target === `${type}-category-${line.dataset.categoryId}`;
+      line.classList.toggle('is-connected', categorySelected && (isCategoryEdge || selectedBrandIds.has(line.dataset.target)));
+    });
+  }
   updateBrandVisibility(baseViewBox.width / currentViewBox.width);
 }
 
@@ -1094,7 +1946,9 @@ const tooltip = document.getElementById('tooltip');
 
 function showTooltip(event, node) {
   const cluster = node.clusterId ? clusters.find(item => item.id === node.clusterId) : clusters.find(item => item.id === node.id);
-  tooltip.textContent = node.group ? `${node.label} · ${node.group}` : cluster?.label || node.label;
+  tooltip.textContent = node.group
+    ? `${getTypographicLabel(node.label)} · ${getTypographicLabel(node.group)}`
+    : getTypographicLabel(cluster?.label || node.label);
   const panelRect = document.querySelector('.graph-panel').getBoundingClientRect();
   tooltip.style.left = `${Math.min(event.clientX - panelRect.left + 12, panelRect.width - 230)}px`;
   tooltip.style.top = `${Math.min(event.clientY - panelRect.top + 12, panelRect.height - 52)}px`;
@@ -1360,7 +2214,7 @@ function openDetailPanel(node) {
   detailChildrenField.hidden = childBrands.length === 0;
   renderDetailChildren(childBrands);
   renderTrademarks(node.label === 'G-Drive' ? ['G-Drive', 'Drive Café'] : [node.label]);
-  detailCategory.textContent = isRodnyeCities ? 'Стратегия / программа' : node.parentId || node.isParentBrand ? 'Программа' : 'Бренд';
+  detailCategory.textContent = node.objectCategory?.label || (isRodnyeCities ? 'Стратегия / программа' : 'Услуга');
   detailAudience.textContent = mockDetails.audience;
   detailEol.textContent = mockDetails.eol;
   detailContacts.textContent = mockDetails.contact;
@@ -1431,3 +2285,5 @@ svg.addEventListener('click', event => {
   if (suppressNodeClick) return;
   if (event.target === svg) closeDetailPanel();
 });
+
+applyDisplayModeColors();
