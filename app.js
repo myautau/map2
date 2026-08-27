@@ -801,6 +801,7 @@ const sphereDisplayNodes = [
   ...sphereDuplicateNodes
 ];
 
+const groupedRingRadii = [260, 330, 400, 470];
 const objectBrandPositions = new Map();
 const objectLayoutCategories = objectCategories.map(category => ({
   ...category,
@@ -810,33 +811,33 @@ const objectLayoutCategories = objectCategories.map(category => ({
 function prepareObjectLayout() {
   const gap = 3;
   const availableDegrees = 360 - gap * objectLayoutCategories.length;
-  const totalWeight = objectLayoutCategories.reduce((sum, category) => sum + Math.max(12, category.brands.length), 0);
+  const totalWeight = objectLayoutCategories.reduce((sum, category) => sum + Math.max(4, category.brands.length), 0);
   let cursor = -174;
 
   objectLayoutCategories.forEach(category => {
-    const sectorSize = availableDegrees * Math.max(12, category.brands.length) / totalWeight;
+    const sectorSize = availableDegrees * Math.max(4, category.brands.length) / totalWeight;
     category.sectorStart = cursor + gap / 2;
     category.sectorEnd = cursor + sectorSize - gap / 2;
     category.angle = (category.sectorStart + category.sectorEnd) / 2;
     const categoryPointAngle = category.angle + (category.id === 'industrial' ? -1.5 : category.id === 'field' ? 1.5 : 0);
     category.position = polarPoint(rootNode.x, rootNode.y, 182, categoryPointAngle);
 
-    const rings = getObjectRingCounts(category.brands.length, sectorSize);
+    const orderedBrands = [...category.brands].sort((first, second) => (
+      getApproximateLabelWidth(first) - getApproximateLabelWidth(second)
+    ));
+    const rings = getLabelAwareRingCounts(orderedBrands, sectorSize);
     let brandIndex = 0;
     rings.forEach((count, ringIndex) => {
-      const radius = rings.length === 1 ? 350 : 340 + ringIndex * 74;
-      const inset = Math.min(1.5, Math.max(.35, sectorSize * .06));
+      const radius = rings.length === 1 ? 350 : groupedRingRadii[ringIndex];
+      const inset = Math.min(2, Math.max(.6, sectorSize * .07));
       const start = category.sectorStart + inset;
       const end = category.sectorEnd - inset;
       const step = count === 1 ? 0 : (end - start) / (count - 1);
       for (let index = 0; index < count; index += 1) {
-        const node = category.brands[brandIndex];
+        const node = orderedBrands[brandIndex];
         const angle = count === 1 ? category.angle : start + index * step;
         const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
-        objectBrandPositions.set(node.id, {
-          x: Math.max(24, Math.min(1138, point.x)),
-          y: Math.max(24, Math.min(936, point.y))
-        });
+        objectBrandPositions.set(node.id, clampGroupedPoint(point));
         brandIndex += 1;
       }
     });
@@ -854,41 +855,9 @@ const sphereLayoutCategories = sphereCategories.map(category => ({
 })).filter(category => category.brands.length);
 
 function prepareSphereLayout() {
-  const gap = 3;
-  const availableDegrees = 360 - gap * sphereLayoutCategories.length;
-  const totalWeight = sphereLayoutCategories.reduce((sum, category) => sum + Math.max(10, category.brands.length), 0);
-  let cursor = -174;
-
-  sphereLayoutCategories.forEach(category => {
-    const sectorSize = availableDegrees * Math.max(10, category.brands.length) / totalWeight;
-    category.sectorStart = cursor + gap / 2;
-    category.sectorEnd = cursor + sectorSize - gap / 2;
-    category.angle = (category.sectorStart + category.sectorEnd) / 2;
-    category.position = polarPoint(rootNode.x, rootNode.y, 182, category.angle);
-
-    const rings = getObjectRingCounts(category.brands.length, sectorSize);
-    let brandIndex = 0;
-    rings.forEach((count, ringIndex) => {
-      const radius = rings.length === 1 ? 350 : 338 + ringIndex * 72;
-      const inset = Math.min(1.5, Math.max(.35, sectorSize * .06));
-      const start = category.sectorStart + inset;
-      const end = category.sectorEnd - inset;
-      const step = count === 1 ? 0 : (end - start) / (count - 1);
-      for (let index = 0; index < count; index += 1) {
-        const node = category.brands[brandIndex];
-        const angle = count === 1 ? category.angle : start + index * step;
-        const rawPoint = polarPoint(rootNode.x, rootNode.y, radius, angle);
-        const point = {
-          x: Math.max(24, Math.min(1138, rawPoint.x)),
-          y: Math.max(24, Math.min(936, rawPoint.y))
-        };
-        sphereBrandPositions.set(`${category.id}:${node.id}`, point);
-        if (!sphereBrandPositions.has(node.id)) sphereBrandPositions.set(node.id, point);
-        brandIndex += 1;
-      }
-    });
-
-    cursor += sectorSize + gap;
+  prepareLabelAwareGroupedLayout(sphereLayoutCategories, (category, node, point) => {
+    sphereBrandPositions.set(`${category.id}:${node.id}`, point);
+    if (!sphereBrandPositions.has(node.id)) sphereBrandPositions.set(node.id, point);
   });
 }
 
@@ -901,34 +870,40 @@ const brandClusterLayoutCategories = brandClusterCategories.map(category => ({
 })).filter(category => category.brands.length);
 
 function prepareBrandClusterLayout() {
-  const gap = 4;
-  const availableDegrees = 360 - gap * brandClusterLayoutCategories.length;
-  const totalWeight = brandClusterLayoutCategories.reduce((sum, category) => sum + Math.max(10, category.brands.length), 0);
+  prepareLabelAwareGroupedLayout(brandClusterLayoutCategories, (_category, node, point) => {
+    brandClusterBrandPositions.set(node.id, point);
+  });
+}
+
+function prepareLabelAwareGroupedLayout(categories, setPosition) {
+  const gap = 3;
+  const availableDegrees = 360 - gap * categories.length;
+  const totalWeight = categories.reduce((sum, category) => sum + Math.max(12, category.brands.length), 0);
   let cursor = -174;
 
-  brandClusterLayoutCategories.forEach(category => {
-    const sectorSize = availableDegrees * Math.max(10, category.brands.length) / totalWeight;
+  categories.forEach(category => {
+    const sectorSize = availableDegrees * Math.max(12, category.brands.length) / totalWeight;
     category.sectorStart = cursor + gap / 2;
     category.sectorEnd = cursor + sectorSize - gap / 2;
     category.angle = (category.sectorStart + category.sectorEnd) / 2;
     category.position = polarPoint(rootNode.x, rootNode.y, 182, category.angle);
 
-    const rings = getObjectRingCounts(category.brands.length, sectorSize);
+    const orderedBrands = [...category.brands].sort((first, second) => (
+      getApproximateLabelWidth(first) - getApproximateLabelWidth(second)
+    ));
+    const rings = getLabelAwareRingCounts(orderedBrands, sectorSize);
     let brandIndex = 0;
     rings.forEach((count, ringIndex) => {
-      const radius = rings.length === 1 ? 350 : 338 + ringIndex * 72;
-      const inset = Math.min(1.5, Math.max(.35, sectorSize * .06));
+      const radius = rings.length === 1 ? 350 : groupedRingRadii[ringIndex];
+      const inset = Math.min(2, Math.max(.6, sectorSize * .07));
       const start = category.sectorStart + inset;
       const end = category.sectorEnd - inset;
       const step = count === 1 ? 0 : (end - start) / (count - 1);
       for (let index = 0; index < count; index += 1) {
-        const node = category.brands[brandIndex];
+        const node = orderedBrands[brandIndex];
         const angle = count === 1 ? category.angle : start + index * step;
         const rawPoint = polarPoint(rootNode.x, rootNode.y, radius, angle);
-        brandClusterBrandPositions.set(node.id, {
-          x: Math.max(24, Math.min(1138, rawPoint.x)),
-          y: Math.max(24, Math.min(936, rawPoint.y))
-        });
+        setPosition(category, node, clampGroupedPoint(rawPoint));
         brandIndex += 1;
       }
     });
@@ -937,23 +912,34 @@ function prepareBrandClusterLayout() {
   });
 }
 
-prepareBrandClusterLayout();
-
-function getObjectRingCounts(total, sectorSize) {
+function getLabelAwareRingCounts(brands, sectorSize) {
+  if (!brands.length) return [];
+  const averageWidth = brands.reduce((sum, node) => sum + getApproximateLabelWidth(node), 0) / brands.length;
+  const minimumSpacing = Math.max(42, Math.min(62, averageWidth * .78));
   const counts = [];
-  let remaining = total;
-  let ringIndex = 0;
-  while (remaining > 0) {
-    const radius = 340 + ringIndex * 74;
+  let remaining = brands.length;
+
+  groupedRingRadii.forEach(radius => {
+    if (!remaining) return;
     const arcLength = radius * sectorSize * Math.PI / 180;
-    const capacity = Math.max(1, Math.floor(arcLength / 22) + 1);
+    const capacity = Math.max(1, Math.floor(arcLength / minimumSpacing) + 1);
     const count = Math.min(remaining, capacity);
     counts.push(count);
     remaining -= count;
-    ringIndex += 1;
-  }
+  });
+
+  if (remaining) counts[counts.length - 1] += remaining;
   return counts;
 }
+
+function clampGroupedPoint(point) {
+  return {
+    x: Math.max(64, Math.min(1098, point.x)),
+    y: Math.max(32, Math.min(900, point.y))
+  };
+}
+
+prepareBrandClusterLayout();
 
 function getNodeDisplayColor(node) {
   if (node.id === 'root') return palette.root;
@@ -1187,14 +1173,7 @@ function addWrappedLabel(group, node) {
     'text-anchor': 'middle'
   });
 
-  const maxLength = node.font >= 12 ? 22 : 18;
-  const words = node.label.split(' ');
-  const lines = [''];
-  words.forEach(word => {
-    const current = lines[lines.length - 1];
-    if (current && `${current} ${word}`.length > maxLength && lines.length < 2) lines.push(word);
-    else lines[lines.length - 1] = current ? `${current} ${word}` : word;
-  });
+  const lines = getWrappedLabelLines(node.label, node.font);
 
   lines.forEach((line, index) => {
     const tspan = createSvgElement('tspan', { x: node.x, dy: index === 0 ? 0 : 10 });
@@ -1227,6 +1206,33 @@ function getTypographicLabelTokens(label) {
 
 function getTypographicLabel(label) {
   return getTypographicLabelTokens(label).join(' ');
+}
+
+function getWrappedLabelLines(label, fontSize) {
+  const maxLength = fontSize >= 12 ? 22 : 16;
+  const maxLines = fontSize >= 12 ? 2 : 3;
+  const lines = [''];
+  getTypographicLabelTokens(label).forEach(word => {
+    const current = lines[lines.length - 1];
+    if (current && `${current} ${word}`.length > maxLength && lines.length < maxLines) lines.push(word);
+    else lines[lines.length - 1] = current ? `${current} ${word}` : word;
+  });
+  return lines;
+}
+
+function getApproximateLabelWidth(node) {
+  const maxLength = (node.font || 8) >= 12 ? 22 : 16;
+  let currentLength = 0;
+  let longestLine = 0;
+  node.label.trim().split(/\s+/).forEach(word => {
+    const nextLength = currentLength ? currentLength + 1 + word.length : word.length;
+    if (currentLength && nextLength > maxLength) {
+      longestLine = Math.max(longestLine, currentLength);
+      currentLength = word.length;
+    } else currentLength = nextLength;
+  });
+  longestLine = Math.max(longestLine, currentLength);
+  return Math.max(32, Math.min(112, longestLine * (node.font || 8) * .56));
 }
 
 const edgeLayer = createSvgElement('g', { class: 'edge-layer' });
@@ -1441,13 +1447,7 @@ function createGroupedGraphLayer(type, categories, positions) {
       fill: '#002033',
       'text-anchor': labelAnchor
     });
-    const words = getTypographicLabelTokens(category.label);
-    const lines = [''];
-    words.forEach(word => {
-      const current = lines[lines.length - 1];
-      if (current && `${current} ${word}`.length > 18 && lines.length < 2) lines.push(word);
-      else lines[lines.length - 1] = current ? `${current} ${word}` : word;
-    });
+    const lines = getGroupedCategoryLabelLines(category.label);
     lines.forEach((line, index) => {
       const tspan = createSvgElement('tspan', { x: labelX, dy: index === 0 ? 0 : 10 });
       tspan.textContent = line;
@@ -1459,6 +1459,22 @@ function createGroupedGraphLayer(type, categories, positions) {
 
   graphLayer.append(edgeLayer, categoryLayer);
   return graphLayer;
+}
+
+function getGroupedCategoryLabelLines(label) {
+  const maxLength = 14;
+  const tokens = getTypographicLabelTokens(label).flatMap(token => {
+    if (token.length <= maxLength || !token.includes('-')) return [token];
+    const parts = token.split('-').filter(Boolean);
+    return parts.map((part, index) => index < parts.length - 1 ? `${part}-` : part);
+  });
+  const lines = [''];
+  tokens.forEach(token => {
+    const current = lines[lines.length - 1];
+    if (current && `${current} ${token}`.length > maxLength && lines.length < 3) lines.push(token);
+    else lines[lines.length - 1] = current ? `${current} ${token}` : token;
+  });
+  return lines;
 }
 
 const sphereGraphLayer = createGroupedGraphLayer('sphere', sphereLayoutCategories, sphereBrandPositions);
@@ -1763,27 +1779,41 @@ function resolveLabelCollisions() {
   labels.forEach(item => {
     const minimumShiftX = margin - item.box.x;
     const maximumShiftX = bounds.width - margin - item.box.x - item.box.width;
-    const edgeShiftX = Math.max(minimumShiftX, Math.min(0, maximumShiftX));
     let position = null;
 
-    for (let radius = 0; radius <= 180 && !position; radius += 6) {
-      const verticalShifts = radius === 0 ? [0] : [radius, -radius];
-      for (const shiftY of verticalShifts) {
-        const candidate = {
-          x: item.box.x + edgeShiftX,
-          y: item.box.y + shiftY,
-          width: item.box.width,
-          height: item.box.height
-        };
-        const inside = candidate.x >= margin
-          && candidate.y >= margin
-          && candidate.x + candidate.width <= bounds.width - margin
-          && candidate.y + candidate.height <= bounds.height - margin;
+    const candidateOffsets = [
+      [0, 0], [0, 6], [0, -6],
+      [8, 0], [-8, 0], [8, 6], [-8, 6], [8, -6], [-8, -6],
+      [0, 12], [0, -12], [14, 0], [-14, 0],
+      [14, 8], [-14, 8], [14, -8], [-14, -8],
+      [0, 18], [0, -18]
+    ];
+    if (displayMode === 'objects') {
+      candidateOffsets.splice(-2, 0,
+        [22, 0], [-22, 0],
+        [22, 6], [-22, 6], [22, -6], [-22, -6],
+        [22, 12], [-22, 12], [22, -12], [-22, -12],
+        [30, 0], [-30, 0],
+        [30, 6], [-30, 6], [30, -6], [-30, -6],
+        [30, 12], [-30, 12], [30, -12], [-30, -12]
+      );
+    }
+    for (const [shiftX, shiftY] of candidateOffsets) {
+      const constrainedShiftX = Math.max(minimumShiftX, Math.min(shiftX, maximumShiftX));
+      const candidate = {
+        x: item.box.x + constrainedShiftX,
+        y: item.box.y + shiftY,
+        width: item.box.width,
+        height: item.box.height
+      };
+      const inside = candidate.x >= margin
+        && candidate.y >= margin
+        && candidate.x + candidate.width <= bounds.width - margin
+        && candidate.y + candidate.height <= bounds.height - margin;
 
-        if (!inside || dots.some(dot => intersects(candidate, dot)) || placed.some(label => intersects(candidate, label))) continue;
-        position = { shiftX: edgeShiftX, shiftY, ...candidate };
-        break;
-      }
+      if (!inside || dots.some(dot => intersects(candidate, dot)) || placed.some(label => intersects(candidate, label))) continue;
+      position = { shiftX: constrainedShiftX, shiftY, ...candidate };
+      break;
     }
 
     const resolved = position || {
