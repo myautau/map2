@@ -768,8 +768,8 @@ const edges = [];
 
 const brandScaleStyles = {
   L: { r: 6, font: 10, weight: 500 },
-  M: { r: 5, font: 8, weight: 400 },
-  S: { r: 4, font: 7, weight: 400 }
+  M: { r: 4, font: 8, weight: 400 },
+  S: { r: 3, font: 7, weight: 400 }
 };
 const portfolioSizePriority = { L: 0, M: 1, S: 2 };
 
@@ -1490,7 +1490,7 @@ nodes.forEach(node => {
   if (node.visibilityTier !== undefined) group.dataset.visibilityTier = node.visibilityTier;
   const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
   const circle = createSvgElement('circle', { class: 'node-dot', cx: node.x, cy: node.y, r: node.r, fill: node.color });
-  circle.style.setProperty('--node-hover-radius', `${Math.max(7, node.r + 2)}px`);
+  circle.style.setProperty('--node-hover-radius', `${node.r + 2}px`);
   group.appendChild(hitArea);
   group.appendChild(circle);
   addWrappedLabel(group, node);
@@ -1700,7 +1700,7 @@ sphereDuplicateNodes.forEach(node => {
   group.dataset.visibilityTier = node.visibilityTier;
   const hitArea = createSvgElement('circle', { class: 'node-hit-area', cx: node.x, cy: node.y, r: Math.max(12, node.r + 6), fill: 'transparent' });
   const circle = createSvgElement('circle', { class: 'node-dot', cx: node.x, cy: node.y, r: node.r, fill: node.color });
-  circle.style.setProperty('--node-hover-radius', `${Math.max(7, node.r + 2)}px`);
+  circle.style.setProperty('--node-hover-radius', `${node.r + 2}px`);
   group.append(hitArea, circle);
   addWrappedLabel(group, node);
   sphereNodeLayer.appendChild(group);
