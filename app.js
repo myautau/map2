@@ -768,7 +768,7 @@ const edges = [];
 
 const brandScaleStyles = {
   L: { r: 6, font: 10, weight: 500 },
-  M: { r: 4, font: 8, weight: 400 },
+  M: { r: 4.5, font: 8, weight: 400 },
   S: { r: 3, font: 7, weight: 400 }
 };
 const portfolioSizePriority = { L: 0, M: 1, S: 2 };
