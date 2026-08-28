@@ -11,6 +11,8 @@ const palette = {
   yellow: '#d2e058'
 };
 
+const portfolioBrand = (label, size = 'M', children = []) => ({ label, size, children });
+
 const clusters = [
   {
     id: 'blps',
@@ -23,8 +25,40 @@ const clusters = [
     ringGap: 58,
     direction: -148,
     groups: [
-      { label: 'Переработка нефти', brands: ['Нефтехимия', 'Биосфера', 'Smart Fuel', 'Полиом'] },
-      { label: 'Логистика и сбыт', brands: ['Битлайт', 'Брит', 'Газпромнефть Ocean', 'G-Energy', 'Drive Café', 'SYNTOLUX', 'ОПТИ', 'Вебнефть', 'StartupDrive', 'G-Drive', 'DDA', 'Розетка', 'G-Lab', 'Mercapp', 'Техактив', 'Сеть АЗС «Газпромнефть»'] }
+      {
+        label: 'Переработка нефти',
+        brands: [
+          portfolioBrand('Газпром нефть Смазочные материалы', 'S'),
+          portfolioBrand('Газпром нефть Омский НПЗ', 'S'),
+          portfolioBrand('Нефтехимия', 'M'),
+          portfolioBrand('Битолит', 'M'),
+          portfolioBrand('Биосфера', 'M'),
+          portfolioBrand('Полиом', 'M')
+        ]
+      },
+      {
+        label: 'Логистика и сбыт',
+        brands: [
+          portfolioBrand('Сеть АЗС Газпромнефть', 'S'),
+          portfolioBrand('Моторное масло Газпромнефть', 'S'),
+          portfolioBrand('Gazpromneft Ocean', 'S'),
+          portfolioBrand('G-Drive', 'L', [
+            portfolioBrand('Drive Cafe', 'S'),
+            portfolioBrand('G-Drive Арена', 'S')
+          ]),
+          portfolioBrand('G-Energy', 'L'),
+          portfolioBrand('ОПТИ', 'L'),
+          portfolioBrand('Syntolux', 'M'),
+          portfolioBrand('Брит', 'M'),
+          portfolioBrand('Startup Drive', 'M'),
+          portfolioBrand('Smart Fuel', 'M'),
+          portfolioBrand('DDA', 'M'),
+          portfolioBrand('Mercapp', 'M'),
+          portfolioBrand('Селектум', 'M'),
+          portfolioBrand('Розетка', 'M'),
+          portfolioBrand('Газпром нефть Региональные продажи', 'S')
+        ]
+      }
     ]
   },
   {
@@ -36,10 +70,34 @@ const clusters = [
     y: 286,
     spread: 90,
     ringGap: 60,
+    layoutWeight: 1.45,
     direction: -34,
     groups: [
-      { label: 'ИТ', brands: ['Consta', 'Профессионалы 4.0', 'N1', 'ИТ-полигон', 'АКПО', 'Линкон'] },
-      { label: 'Снабжение', brands: ['iSource', 'Progress', 'Vector Logitech', 'Express Logitech', 'Inspector iSource', 'Academy iSource', 'Processor iSource', 'Terminal iSource', 'Reserve iSource', 'Graphic Logitech', 'Finance iSource', 'Inventory Logitech', 'Effect iSource', 'Industry iSource', 'Element iSource', 'Leancon', 'Logotech', 'Radar Logitech', 'Виджет Линк', 'Энерготехнофест'] }
+      {
+        label: 'ИТ',
+        brands: [
+          portfolioBrand('Газпром нефть Цифровые решения', 'S'),
+          portfolioBrand('Consta', 'M'),
+          portfolioBrand('Профессионалы 4.0', 'M'),
+          portfolioBrand('N1', 'M'),
+          portfolioBrand('ИТ-Полигон', 'M'),
+          portfolioBrand('АЦТП', 'M', [
+            portfolioBrand('Энерготехнохаб Петербург', 'S'),
+            portfolioBrand('Энерготехнофест', 'S')
+          ]),
+          portfolioBrand('АКПО', 'M'),
+          portfolioBrand('Isource', 'L', [
+            portfolioBrand('Isource Processor', 'S'),
+            portfolioBrand('Isource Logotech', 'S'),
+            portfolioBrand('Isource Terminal', 'S'),
+            portfolioBrand('Isource Academy', 'S'),
+            portfolioBrand('Isource Finance', 'S')
+          ]),
+          portfolioBrand('Виджет', 'M'),
+          portfolioBrand('Линкон', 'M')
+        ]
+      },
+      { label: 'Снабжение', brands: [portfolioBrand('Газпром нефть Снабжение', 'S')] }
     ]
   },
   {
@@ -51,44 +109,60 @@ const clusters = [
     y: 600,
     spread: 82,
     ringGap: 58,
+    layoutWeight: 1.3,
     direction: 18,
     groups: [
       {
         label: 'Коммуникации',
-        brands: ['Инсайт', 'Брендлист', 'Нефтегазета', {
-          label: 'Арктика Медиа',
-          children: ['Тюмень 1', 'Ямал 1']
-        }]
+        brands: [
+          portfolioBrand('Дни Эрмитажа в Сербии', 'M'),
+          portfolioBrand('Zajedno!', 'M'),
+          portfolioBrand('Энергия+', 'M'),
+          portfolioBrand('Мобильная лента', 'M'),
+          portfolioBrand('Нефтегазета', 'M'),
+          portfolioBrand('Брендлист', 'M'),
+          portfolioBrand('Большая книга коммуникаций', 'M'),
+          portfolioBrand('Арктика медиа', 'M', [
+            portfolioBrand('Тюмень 1', 'S'),
+            portfolioBrand('Ямал 1', 'S')
+          ])
+        ]
       },
       {
         label: 'Социальные инвестиции',
-        brands: [{
-          label: 'Родные города',
-          children: [
-            'Волонтёры Газпром нефти',
-            'Хоккей для всех',
-            'Научные лагеря',
-            'Спорт во дворе',
-            'Умножая таланты',
-            'ШТОРМ',
-            'Грантовый конкурс «Газпром нефти»',
-            'Музыкальная мастерская Юрия Розума',
-            'Чистая среда',
-            'Родные музеи',
-            'Кустендорф КЛАССИК',
-            'Дни Эрмитажа в Сербии',
-            'Водная среда',
-            'Спортивный полюс',
-            'МАСТЕРА',
-            'Zajedno!',
-            'ПикникХМ',
-            'Зелёная среда',
-            'Сказки Севера',
-            'Математическая прогрессия',
-            'Местные',
-            'Полигон'
-          ]
-        }]
+        brands: [
+          portfolioBrand('Родные города', 'L', [
+            portfolioBrand('Волонтёры Газпром нефти', 'M'),
+            portfolioBrand('Грантовый конкурс Газпромнефти', 'M'),
+            portfolioBrand('Родные музеи', 'M'),
+            portfolioBrand('Музыкальная мастерская Юрия Розума', 'M'),
+            portfolioBrand('Умножаем таланты', 'M'),
+            portfolioBrand('Чистая среда', 'M'),
+            portfolioBrand('Зелёная среда', 'M'),
+            portfolioBrand('Водная среда', 'M'),
+            portfolioBrand('Математическая прогрессия', 'M'),
+            portfolioBrand('Дух огня', 'M'),
+            portfolioBrand('Kustendorf Classic', 'M'),
+            portfolioBrand('Местные', 'M'),
+            portfolioBrand('Смотри на звёзды', 'M'),
+            portfolioBrand('Музсходка', 'M'),
+            portfolioBrand('Ноль плюс', 'M'),
+            portfolioBrand('Шторм', 'M'),
+            portfolioBrand('Резной Томск', 'S'),
+            portfolioBrand('Родной Ноябрьск', 'S'),
+            portfolioBrand('Научные лагеря', 'S'),
+            portfolioBrand('Спортивный полюс', 'S'),
+            portfolioBrand('Дыхание Арктики', 'S'),
+            portfolioBrand('Хоккей для всех', 'S'),
+            portfolioBrand('Родной Муравленко', 'S'),
+            portfolioBrand('Город своими руками', 'S'),
+            portfolioBrand('Улицы культуры', 'S'),
+            portfolioBrand('День оленевода', 'S'),
+            portfolioBrand('День рыбака', 'S'),
+            portfolioBrand('Спорт во дворе', 'S')
+          ]),
+          portfolioBrand('Экологика Газпром нефти', 'L')
+        ]
       }
     ]
   },
@@ -103,8 +177,30 @@ const clusters = [
     ringGap: 60,
     direction: 146,
     groups: [
-      { label: 'Разведка и добыча', brands: ['Салым Петролеум', 'Актив будущего', 'Геобазис', 'КЕДР', 'Мессояханефтегаз', 'Южно-Приобский ГПЗ', 'Геонавигатор', 'Геосфера', 'Капитан', 'INDUSTRIX', 'Арктикгаз', 'Меретояханефтегаз'] },
-      { label: 'Производственная безопасность', brands: ['Каркас безопасности'] }
+      {
+        label: 'Разведка и добыча',
+        brands: [
+          portfolioBrand('Авангард', 'L'),
+          portfolioBrand('Nedra Digital', 'M', [
+            portfolioBrand('Nedra Data', 'S'),
+            portfolioBrand('Nedra RTM', 'S'),
+            portfolioBrand('Nedra Drilling', 'S')
+          ]),
+          portfolioBrand('Кибер ГРП', 'M'),
+          portfolioBrand('Кедр', 'M'),
+          portfolioBrand('Капитан', 'M'),
+          portfolioBrand('Industrix', 'M'),
+          portfolioBrand('Геосфера', 'M'),
+          portfolioBrand('Геобазис', 'M'),
+          portfolioBrand('Геонавигатор', 'M'),
+          portfolioBrand('Актив будущего', 'M'),
+          portfolioBrand('Меретояханефтегаз', 'M'),
+          portfolioBrand('Мессояханефтегаз', 'M'),
+          portfolioBrand('Салам Петролеум Девелопмент', 'M'),
+          portfolioBrand('Южно-Приобский ГПЗ', 'M')
+        ]
+      },
+      { label: 'Производственная безопасность', brands: [portfolioBrand('Каркас безопасности', 'M')] }
     ]
   },
   {
@@ -116,7 +212,7 @@ const clusters = [
     y: 396,
     spread: 72,
     direction: 4,
-    groups: [{ label: 'Экономика и финансы', brands: ['Эталон', 'CFO — школа директоров'] }]
+    groups: [{ label: 'Экономика и финансы', brands: [portfolioBrand('Эталон', 'M'), portfolioBrand('CFO', 'M')] }]
   },
   {
     id: 'bpkiiv',
@@ -127,7 +223,12 @@ const clusters = [
     y: 698,
     spread: 82,
     direction: 68,
-    groups: [{ label: 'Правовое сопровождение', brands: ['Цифраториум', 'Охтацентр', 'G-Drive Арена', 'Экспертные решения'] }]
+    groups: [{ label: 'Правовое сопровождение', brands: [
+      portfolioBrand('Цифергауз', 'M'),
+      portfolioBrand('Охта центр', 'M'),
+      portfolioBrand('Экспертные решения', 'M'),
+      portfolioBrand('Глэмпинг подворье', 'M')
+    ] }]
   },
   {
     id: 'bbrp',
@@ -138,7 +239,12 @@ const clusters = [
     y: 764,
     spread: 68,
     direction: 91,
-    groups: [{ label: 'Управление персоналом', brands: ['Корпоративный университет', 'Лига колледжей'] }]
+    groups: [{ label: 'Управление персоналом', brands: [
+      portfolioBrand('Корпоративный университет Газпром нефти', 'L', [
+        portfolioBrand('Лига вузов', 'S'),
+        portfolioBrand('Лига колледжей', 'S')
+      ])
+    ] }]
   },
   {
     id: 'dov',
@@ -149,7 +255,7 @@ const clusters = [
     y: 746,
     spread: 62,
     direction: 105,
-    groups: [{ label: 'Организационное развитие', brands: ['Люди прогресса 2025'] }]
+    groups: [{ label: 'Организационное развитие', brands: [portfolioBrand('Люди прогресса', 'L')] }]
   },
   {
     id: 'dva',
@@ -160,7 +266,7 @@ const clusters = [
     y: 674,
     spread: 58,
     direction: 132,
-    groups: [{ label: 'Управление рисками', brands: ['Promine'] }]
+    groups: [{ label: 'Управление рисками', brands: [portfolioBrand('Promine', 'M')] }]
   }
 ];
 
@@ -195,7 +301,7 @@ const objectCategories = [
 const objectCategoryById = new Map(objectCategories.map(category => [category.id, category]));
 
 const sphereCategories = [
-  { id: 'corporate', label: 'Корпоративное управление', color: '#32B4FF' },
+  { id: 'corporate', label: 'Корпоративное управление', color: '#32B4FF', layoutWeight: 1.35 },
   { id: 'production', label: 'Производство', color: '#90DDFF' },
   { id: 'exploration', label: 'Разведка и добыча', color: '#3B4195' },
   { id: 'sales', label: 'Сбыт', color: '#646CDF' },
@@ -204,7 +310,7 @@ const sphereCategories = [
   { id: 'logistics', label: 'Транспорт и логистика', color: '#FFBD59' },
   { id: 'media', label: 'Медиа и коммуникации', color: '#FFE7BC' },
   { id: 'safety', label: 'Производственная безопасность', color: '#9CA3FF' },
-  { id: 'technology', label: 'Технологии и цифра', color: '#108E9C' },
+  { id: 'technology', label: 'Технологии и цифра', color: '#108E9C', layoutWeight: 1.45 },
   { id: 'education', label: 'Наука и образование', color: '#6AE0ED' },
   { id: 'sport', label: 'Спорт', color: '#FF7479' },
   { id: 'culture', label: 'Культура', color: '#FFC5C7' },
@@ -239,28 +345,75 @@ const knownObjectCategories = new Map(Object.entries({
   'Газпромнефть Битумные материалы': 'subsidiary',
   'Газпромнефть Шельф': 'subsidiary',
   'Газпромнефть Московский завод смазочных материалов': 'subsidiary',
+  'Газпром нефть Смазочные материалы': 'subsidiary',
+  'Газпром нефть Омский НПЗ': 'industrial',
+  'Газпром нефть Региональные продажи': 'subsidiary',
+  'Газпром нефть Цифровые решения': 'subsidiary',
+  'Газпром нефть Снабжение': 'subsidiary',
   'Меретояханефтегаз': 'joint-venture',
   'Мессояханефтегаз': 'joint-venture',
+  'Салам Петролеум Девелопмент': 'joint-venture',
   'Умножая таланты': 'project',
+  'Умножаем таланты': 'project',
   'Promine': 'digital-product',
   'Энергия +': 'media',
+  'Энергия+': 'media',
+  'Мобильная лента': 'digital-media',
   'Вебнефть': 'digital-media',
+  'Startup Drive': 'digital-media',
   'Полиом': 'joint-venture',
   'Родные города': 'strategy',
   'G-Energy': 'product',
+  'Битолит': 'product',
+  'Моторное масло Газпромнефть': 'product',
+  'Gazpromneft Ocean': 'product',
+  'Drive Cafe': 'service',
   'INDUSTRIX': 'strategy',
   'Nedra Digital': 'digital-product',
+  'Nedra Data': 'digital-product',
+  'Nedra RTM': 'digital-product',
+  'Nedra Drilling': 'digital-product',
   'PROНЕФТЬ': 'digital-product',
   'Smart Fuel': 'digital-product',
   'Selektum': 'digital-product',
+  'Селектум': 'digital-product',
   'SYNTOLUX': 'digital-product',
+  'АЦТП': 'center',
+  'Энерготехнохаб Петербург': 'technopark',
+  'Виджет': 'digital-product',
+  'Кибер ГРП': 'technology',
+  'Авангард': 'technology',
+  'Кедр': 'system',
+  'Геосфера': 'digital-product',
+  'Геобазис': 'digital-product',
+  'Геонавигатор': 'digital-product',
+  'Актив будущего': 'project',
+  'Цифергауз': 'digital-media',
+  'Охта центр': 'center',
+  'Лига вузов': 'community',
   'Волонтеры Газпром нефти': 'strategy',
   'Волонтёры Газпром нефти': 'strategy',
   'Родные музеи': 'strategy',
   'Математическая прогрессия': 'strategy',
   'Музыкальная мастерская Юрия Розума': 'project',
+  'Большая книга коммуникаций': 'films-books',
   'Грантовый конкурс Газпром нефти': 'strategy',
-  'Грантовый конкурс «Газпром нефти»': 'strategy'
+  'Грантовый конкурс «Газпром нефти»': 'strategy',
+  'Грантовый конкурс Газпромнефти': 'award',
+  'Дух огня': 'festival',
+  'Kustendorf Classic': 'festival',
+  'Музсходка': 'festival',
+  'Ноль плюс': 'festival',
+  'День оленевода': 'festival',
+  'День рыбака': 'festival',
+  'Смотри на звёзды': 'project',
+  'Резной Томск': 'project',
+  'Родной Ноябрьск': 'project',
+  'Дыхание Арктики': 'project',
+  'Родной Муравленко': 'project',
+  'Город своими руками': 'project',
+  'Улицы культуры': 'project',
+  'Экологика Газпром нефти': 'strategy'
 }).map(([label, categoryId]) => [normalizeBrandKey(label), categoryId]));
 
 function getObjectCategory(label) {
@@ -362,7 +515,10 @@ function getBrandClusterCategory(label, clusterId, group = '') {
 function getAllBrandDefinitions() {
   return clusters.flatMap(cluster => cluster.groups.flatMap(group => group.brands.flatMap(brand => {
     if (typeof brand === 'string') return [{ label: brand }];
-    return [{ label: brand.label }, ...(brand.children || []).map(label => ({ label }))];
+    return [{ label: brand.label }, ...(brand.children || []).flatMap(child => {
+      if (typeof child === 'string') return [{ label: child }];
+      return [{ label: child.label }, ...(child.children || []).map(grandchild => ({ label: typeof grandchild === 'string' ? grandchild : grandchild.label }))];
+    })];
   })));
 }
 
@@ -468,21 +624,22 @@ function renderTree(items, parent, depth = 0) {
   list.className = 'tree-list';
 
   items.forEach(item => {
+    const hasChildren = Boolean(item.children?.length);
     const entry = document.createElement('li');
     entry.className = `tree-item${item.open ? ' is-open' : ''}`;
     const row = document.createElement('button');
     row.className = 'tree-row';
     row.type = 'button';
     row.style.paddingLeft = `${8 + depth * 16}px`;
-    row.dataset.clickable = String(Boolean(item.children || item.graphId || item.brandLabel));
+    row.dataset.clickable = String(Boolean(hasChildren || item.graphId || item.brandLabel));
     if (item.graphId) row.dataset.graphId = item.graphId;
     if (item.brandLabel) row.dataset.brandLabel = item.brandLabel;
     if (item.groupedCategoryId) row.dataset.groupedFocusId = getGroupedFocusId(item.groupedCategoryType, item.groupedCategoryId);
     row.title = item.label;
-    row.innerHTML = `<span class="chevron ${item.children ? '' : 'is-empty'}"></span><span class="tree-dot" style="--dot:${item.color || '#8ca2b3'}"></span><span class="tree-label">${item.label}</span>`;
+    row.innerHTML = `<span class="chevron ${hasChildren ? '' : 'is-empty'}"></span><span class="tree-dot" style="--dot:${item.color || '#8ca2b3'}"></span><span class="tree-label">${item.label}</span>`;
 
     row.addEventListener('click', () => {
-      if (item.children) entry.classList.toggle('is-open');
+      if (hasChildren) entry.classList.toggle('is-open');
       if (item.graphId) {
         setFocus(item.graphId, true);
         const graphNode = nodeById.get(item.graphId);
@@ -514,7 +671,7 @@ function renderTree(items, parent, depth = 0) {
     row.addEventListener('mouseleave', () => (item.graphId || item.brandLabel || item.groupedCategoryId) && !pinnedId && clearFocus());
     entry.appendChild(row);
 
-    if (item.children) {
+    if (hasChildren) {
       const children = document.createElement('div');
       children.className = 'tree-children';
       renderTree(item.children, children, depth + 1);
@@ -609,6 +766,23 @@ const rootNode = { id: 'root', label: 'Газпром нефть', x: 581, y: 49
 const nodes = [rootNode];
 const edges = [];
 
+const brandScaleStyles = {
+  L: { r: 6, font: 10, weight: 500 },
+  M: { r: 5, font: 8, weight: 400 },
+  S: { r: 4, font: 7, weight: 400 }
+};
+const portfolioSizePriority = { L: 0, M: 1, S: 2 };
+
+function getBrandScaleStyle(size = 'M') {
+  return brandScaleStyles[size] || brandScaleStyles.M;
+}
+
+function compareBrandsByPortfolioSize(first, second) {
+  return (portfolioSizePriority[first.size || first.portfolioSize || 'M'] ?? 1)
+    - (portfolioSizePriority[second.size || second.portfolioSize || 'M'] ?? 1)
+    || getApproximateLabelWidth(second) - getApproximateLabelWidth(first);
+}
+
 function polarPoint(centerX, centerY, radius, angle) {
   const radians = angle * Math.PI / 180;
   return { x: centerX + Math.cos(radians) * radius, y: centerY + Math.sin(radians) * radius };
@@ -620,13 +794,13 @@ const sectorGap = 4;
 const availableDegrees = 360 - sectorGap * orderedClusters.length;
 const totalWeight = orderedClusters.reduce((sum, cluster) => {
   const brandCount = countClusterBrands(cluster);
-  return sum + Math.max(6, brandCount);
+  return sum + Math.max(8, brandCount) * (cluster.layoutWeight || 1);
 }, 0);
 let sectorCursor = -174;
 
 orderedClusters.forEach(cluster => {
   const brandCount = countClusterBrands(cluster);
-  const sectorSize = availableDegrees * Math.max(6, brandCount) / totalWeight;
+  const sectorSize = availableDegrees * Math.max(8, brandCount) * (cluster.layoutWeight || 1) / totalWeight;
   cluster.sectorStart = sectorCursor + sectorGap / 2;
   cluster.sectorEnd = sectorCursor + sectorSize - sectorGap / 2;
   cluster.angle = (cluster.sectorStart + cluster.sectorEnd) / 2;
@@ -650,8 +824,9 @@ function addClusterNodes(cluster) {
   const topLevelBrands = cluster.groups.flatMap(group => group.brands.map(brand => ({
     label: typeof brand === 'string' ? brand : brand.label,
     children: typeof brand === 'string' ? [] : brand.children || [],
+    size: typeof brand === 'string' ? 'M' : brand.size || 'M',
     group: group.label
-  })));
+  }))).sort(compareBrandsByPortfolioSize);
   const nestedParents = topLevelBrands.filter(brand => brand.children.length);
 
   if (nestedParents.length) {
@@ -673,13 +848,18 @@ function addClusterNodes(cluster) {
     const ringInset = rings.length === 1 ? 1 : ringIndex * 0.7;
     const start = cluster.sectorStart + ringInset;
     const end = cluster.sectorEnd - ringInset;
-    const step = count === 1 ? 0 : (end - start) / (count - 1);
+    const step = count === 1 ? 0 : (end - start) / count;
 
     for (let index = 0; index < count; index += 1) {
       const brand = brands[brandIndex];
-      const angle = count === 1 ? cluster.angle : start + index * step;
-      const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
+      const ringPhase = ringIndex % 2 === 0 ? 0.42 : 0.68;
+      const angle = count === 1 ? cluster.angle : start + (index + ringPhase) * step;
+      const compactSectorOffset = rings.length === 1 && count >= 4 && end - start < 30
+        ? (index % 2 === 0 ? -32 : 52)
+        : 0;
+      const point = polarPoint(rootNode.x, rootNode.y, radius + compactSectorOffset, angle);
       const id = `${cluster.id}-${brandIndex}`;
+      const scaleStyle = getBrandScaleStyle(brand.size);
       nodes.push({
         id,
         label: brand.label,
@@ -687,12 +867,14 @@ function addClusterNodes(cluster) {
         clusterId: cluster.id,
         x: Math.max(24, Math.min(1138, point.x)),
         y: Math.max(24, Math.min(936, point.y)),
-        r: 4.5,
+        r: scaleStyle.r,
         color: cluster.color,
         departmentColor: cluster.color,
         objectCategory: getObjectCategory(brand.label),
         sphereCategory: getSphereCategory(brand.label, cluster.id, brand.group),
-        font: 8.5
+        font: scaleStyle.font,
+        weight: scaleStyle.weight,
+        portfolioSize: brand.size
       });
       edges.push({ source: cluster.id, target: id, color: cluster.color });
       brandIndex += 1;
@@ -704,6 +886,7 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
   const totalWeight = topLevelBrands.reduce((sum, brand) => sum + Math.max(1, brand.children.length + 1), 0);
   const availableAngle = cluster.sectorEnd - cluster.sectorStart;
   let angleCursor = cluster.sectorStart;
+  const directBrandIndexes = { L: 0, M: 0, S: 0 };
 
   topLevelBrands.forEach((brand, topLevelIndex) => {
     const brandWeight = Math.max(1, brand.children.length + 1);
@@ -711,9 +894,17 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
     const sliceStart = angleCursor;
     const sliceEnd = angleCursor + sliceSize;
     const angle = (sliceStart + sliceEnd) / 2;
-    const point = polarPoint(rootNode.x, rootNode.y, 250, angle);
     const isParentBrand = brand.children.length > 0;
-    const isEmphasizedParent = isParentBrand && !['Арктика Медиа', 'Родные города'].includes(brand.label);
+    const size = brand.size || 'M';
+    const directBrandRadii = {
+      L: [286, 310],
+      M: [342, 396, 442],
+      S: [410, 452]
+    };
+    const sizeRadii = directBrandRadii[size] || directBrandRadii.M;
+    const radius = isParentBrand ? 250 : sizeRadii[directBrandIndexes[size] % sizeRadii.length];
+    const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
+    const scaleStyle = getBrandScaleStyle(brand.size);
     const id = isParentBrand
       ? `${cluster.id}-nested-parent-${topLevelIndex}`
       : `${cluster.id}-direct-${topLevelIndex}`;
@@ -726,31 +917,41 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
       isParentBrand,
       x: point.x,
       y: point.y,
-      r: isEmphasizedParent ? 6 : 4.5,
+      r: scaleStyle.r,
       color: cluster.color,
       departmentColor: cluster.color,
       objectCategory: getObjectCategory(brand.label),
       sphereCategory: getSphereCategory(brand.label, cluster.id, brand.group),
-      font: isEmphasizedParent ? 10 : 8.5,
-      weight: isEmphasizedParent ? 500 : 400
+      font: scaleStyle.font,
+      weight: scaleStyle.weight,
+      portfolioSize: brand.size
     });
     edges.push({ source: cluster.id, target: id, color: cluster.color });
 
+    if (!isParentBrand) directBrandIndexes[size] += 1;
+
     if (isParentBrand) {
-      const childRings = brand.children.length > 12 ? [8, brand.children.length - 8] : [brand.children.length];
+      const childRings = getRingCounts(brand.children.length);
       let childIndex = 0;
       childRings.forEach((count, ringIndex) => {
-        const radius = 318 + ringIndex * 68;
+        const radius = childRings.length === 1 ? 382 : 318 + ringIndex * 62;
         const inset = Math.min(1.5, sliceSize * .08);
         const start = sliceStart + inset;
         const end = sliceEnd - inset;
-        const step = count === 1 ? 0 : (end - start) / (count - 1);
+        const step = count === 1 ? 0 : (end - start) / count;
         for (let index = 0; index < count; index += 1) {
-          const label = brand.children[childIndex];
-          const childAngle = count === 1 ? angle : start + index * step;
-          const childPoint = polarPoint(rootNode.x, rootNode.y, radius, childAngle);
+          const child = brand.children[childIndex];
+          const label = typeof child === 'string' ? child : child.label;
+          const childSize = typeof child === 'string' ? 'S' : child.size || 'S';
+          const childScaleStyle = getBrandScaleStyle(childSize);
+          const ringPhase = ringIndex % 2 === 0 ? 0.42 : 0.68;
+          const childAngle = count === 1 ? angle : start + (index + ringPhase) * step;
+          const childRadiusOffset = childRings.length === 1 && count > 1
+            ? (index % 2 === 0 ? -18 : 28)
+            : 0;
+          const childPoint = polarPoint(rootNode.x, rootNode.y, radius + childRadiusOffset, childAngle);
           const childId = `${id}-child-${childIndex}`;
-          nodes.push({ id: childId, label, group: brand.label, clusterId: cluster.id, parentId: id, x: childPoint.x, y: childPoint.y, r: 4.5, color: cluster.color, departmentColor: cluster.color, objectCategory: getObjectCategory(label), sphereCategory: getSphereCategory(label, cluster.id, brand.group), font: 8.5 });
+          nodes.push({ id: childId, label, group: brand.label, clusterId: cluster.id, parentId: id, x: childPoint.x, y: childPoint.y, r: childScaleStyle.r, color: cluster.color, departmentColor: cluster.color, objectCategory: getObjectCategory(label), sphereCategory: getSphereCategory(label, cluster.id, brand.group), font: childScaleStyle.font, weight: childScaleStyle.weight, portfolioSize: childSize });
           edges.push({ source: id, target: childId, color: cluster.color });
           childIndex += 1;
         }
@@ -776,7 +977,9 @@ function getRingCounts(total) {
   if (total <= 8) return [total];
   if (total <= 14) return [5, total - 5];
   if (total <= 21) return [6, 7, total - 13];
-  return [6, 8, total - 14];
+  const innerCount = Math.ceil(total * .25);
+  const middleCount = Math.ceil((total - innerCount) * .46);
+  return [innerCount, middleCount, total - innerCount - middleCount];
 }
 
 clusters.forEach(addClusterNodes);
@@ -802,6 +1005,11 @@ const sphereDisplayNodes = [
 ];
 
 const groupedRingRadii = [260, 330, 400, 470];
+const groupedRingRadiiBySize = {
+  L: [270, 300],
+  M: [350, 395, 435],
+  S: [445, 470, 490]
+};
 const objectBrandPositions = new Map();
 const objectLayoutCategories = objectCategories.map(category => ({
   ...category,
@@ -811,35 +1019,19 @@ const objectLayoutCategories = objectCategories.map(category => ({
 function prepareObjectLayout() {
   const gap = 3;
   const availableDegrees = 360 - gap * objectLayoutCategories.length;
-  const totalWeight = objectLayoutCategories.reduce((sum, category) => sum + Math.max(4, category.brands.length), 0);
+  const totalWeight = objectLayoutCategories.reduce((sum, category) => sum + getGroupedCategoryWeight(category, 4), 0);
   let cursor = -174;
 
   objectLayoutCategories.forEach(category => {
-    const sectorSize = availableDegrees * Math.max(4, category.brands.length) / totalWeight;
+    const sectorSize = availableDegrees * getGroupedCategoryWeight(category, 4) / totalWeight;
     category.sectorStart = cursor + gap / 2;
     category.sectorEnd = cursor + sectorSize - gap / 2;
     category.angle = (category.sectorStart + category.sectorEnd) / 2;
     const categoryPointAngle = category.angle + (category.id === 'industrial' ? -1.5 : category.id === 'field' ? 1.5 : 0);
     category.position = polarPoint(rootNode.x, rootNode.y, 182, categoryPointAngle);
 
-    const orderedBrands = [...category.brands].sort((first, second) => (
-      getApproximateLabelWidth(first) - getApproximateLabelWidth(second)
-    ));
-    const rings = getLabelAwareRingCounts(orderedBrands, sectorSize);
-    let brandIndex = 0;
-    rings.forEach((count, ringIndex) => {
-      const radius = rings.length === 1 ? 350 : groupedRingRadii[ringIndex];
-      const inset = Math.min(2, Math.max(.6, sectorSize * .07));
-      const start = category.sectorStart + inset;
-      const end = category.sectorEnd - inset;
-      const step = count === 1 ? 0 : (end - start) / (count - 1);
-      for (let index = 0; index < count; index += 1) {
-        const node = orderedBrands[brandIndex];
-        const angle = count === 1 ? category.angle : start + index * step;
-        const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
-        objectBrandPositions.set(node.id, clampGroupedPoint(point));
-        brandIndex += 1;
-      }
+    placeGroupedBrandsBySize(category, sectorSize, (_category, node, point) => {
+      objectBrandPositions.set(node.id, point);
     });
 
     cursor += sectorSize + gap;
@@ -858,7 +1050,7 @@ function prepareSphereLayout() {
   prepareLabelAwareGroupedLayout(sphereLayoutCategories, (category, node, point) => {
     sphereBrandPositions.set(`${category.id}:${node.id}`, point);
     if (!sphereBrandPositions.has(node.id)) sphereBrandPositions.set(node.id, point);
-  });
+  }, 3, 5);
 }
 
 prepareSphereLayout();
@@ -872,54 +1064,71 @@ const brandClusterLayoutCategories = brandClusterCategories.map(category => ({
 function prepareBrandClusterLayout() {
   prepareLabelAwareGroupedLayout(brandClusterLayoutCategories, (_category, node, point) => {
     brandClusterBrandPositions.set(node.id, point);
-  });
+  }, 8, 4);
 }
 
-function prepareLabelAwareGroupedLayout(categories, setPosition) {
-  const gap = 3;
+function prepareLabelAwareGroupedLayout(categories, setPosition, minimumWeight = 8, gap = 3) {
   const availableDegrees = 360 - gap * categories.length;
-  const totalWeight = categories.reduce((sum, category) => sum + Math.max(12, category.brands.length), 0);
+  const totalWeight = categories.reduce((sum, category) => sum + getGroupedCategoryWeight(category, minimumWeight), 0);
   let cursor = -174;
 
   categories.forEach(category => {
-    const sectorSize = availableDegrees * Math.max(12, category.brands.length) / totalWeight;
+    const sectorSize = availableDegrees * getGroupedCategoryWeight(category, minimumWeight) / totalWeight;
     category.sectorStart = cursor + gap / 2;
     category.sectorEnd = cursor + sectorSize - gap / 2;
     category.angle = (category.sectorStart + category.sectorEnd) / 2;
     category.position = polarPoint(rootNode.x, rootNode.y, 182, category.angle);
 
-    const orderedBrands = [...category.brands].sort((first, second) => (
-      getApproximateLabelWidth(first) - getApproximateLabelWidth(second)
-    ));
-    const rings = getLabelAwareRingCounts(orderedBrands, sectorSize);
-    let brandIndex = 0;
-    rings.forEach((count, ringIndex) => {
-      const radius = rings.length === 1 ? 350 : groupedRingRadii[ringIndex];
-      const inset = Math.min(2, Math.max(.6, sectorSize * .07));
-      const start = category.sectorStart + inset;
-      const end = category.sectorEnd - inset;
-      const step = count === 1 ? 0 : (end - start) / (count - 1);
-      for (let index = 0; index < count; index += 1) {
-        const node = orderedBrands[brandIndex];
-        const angle = count === 1 ? category.angle : start + index * step;
-        const rawPoint = polarPoint(rootNode.x, rootNode.y, radius, angle);
-        setPosition(category, node, clampGroupedPoint(rawPoint));
-        brandIndex += 1;
-      }
-    });
+    placeGroupedBrandsBySize(category, sectorSize, setPosition);
 
     cursor += sectorSize + gap;
   });
 }
 
-function getLabelAwareRingCounts(brands, sectorSize) {
+function getGroupedCategoryWeight(category, minimumWeight) {
+  const labelWeight = category.brands.reduce((sum, node) => (
+    sum + Math.max(.85, Math.min(1.8, getApproximateLabelWidth(node) / 52))
+  ), 0);
+  return Math.max(minimumWeight, labelWeight) * (category.layoutWeight || 1);
+}
+
+function placeGroupedBrandsBySize(category, sectorSize, setPosition) {
+  const sizePhaseOffsets = { L: .12, M: .46, S: .78 };
+  ['L', 'M', 'S'].forEach(size => {
+    const orderedBrands = category.brands
+      .filter(node => (node.portfolioSize || 'M') === size)
+      .sort(compareBrandsByPortfolioSize);
+    if (!orderedBrands.length) return;
+
+    const radii = groupedRingRadiiBySize[size];
+    const rings = getLabelAwareRingCounts(orderedBrands, sectorSize, radii);
+    let brandIndex = 0;
+    rings.forEach((count, ringIndex) => {
+      const radius = radii[Math.min(ringIndex, radii.length - 1)];
+      const inset = Math.min(2, Math.max(.6, sectorSize * .07));
+      const start = category.sectorStart + inset;
+      const end = category.sectorEnd - inset;
+      const step = count === 1 ? 0 : (end - start) / count;
+      const ringPhase = (sizePhaseOffsets[size] + (ringIndex % 2 === 0 ? 0 : .28)) % 1;
+      for (let index = 0; index < count; index += 1) {
+        const node = orderedBrands[brandIndex];
+        const angle = count === 1 ? category.angle : start + (index + ringPhase) * step;
+        const rawPoint = polarPoint(rootNode.x, rootNode.y, radius, angle);
+        setPosition(category, node, clampGroupedPoint(rawPoint));
+        brandIndex += 1;
+      }
+    });
+  });
+}
+
+function getLabelAwareRingCounts(brands, sectorSize, radii = groupedRingRadii) {
   if (!brands.length) return [];
   const averageWidth = brands.reduce((sum, node) => sum + getApproximateLabelWidth(node), 0) / brands.length;
-  const minimumSpacing = Math.max(42, Math.min(62, averageWidth * .78));
+  const minimumSpacing = Math.max(48, Math.min(96, averageWidth * .9));
   const counts = [];
   let remaining = brands.length;
 
-  groupedRingRadii.forEach(radius => {
+  radii.forEach(radius => {
     if (!remaining) return;
     const arcLength = radius * sectorSize * Math.PI / 180;
     const capacity = Math.max(1, Math.floor(arcLength / minimumSpacing) + 1);
@@ -1002,28 +1211,8 @@ function allocateClusterQuotas(clusterBrands, ratio, targetTotal) {
 }
 
 function assignBrandVisibilityTiers() {
-  const brandNodes = nodes.filter(node => node.clusterId);
-  const clusterBrands = new Map();
-  brandNodes.forEach(node => {
-    if (!clusterBrands.has(node.clusterId)) clusterBrands.set(node.clusterId, []);
-    clusterBrands.get(node.clusterId).push(node);
-  });
-
-  const overviewQuotas = allocateClusterQuotas(clusterBrands, .7, Math.ceil(brandNodes.length * .7));
-  const mediumQuotas = allocateClusterQuotas(clusterBrands, .85, Math.ceil(brandNodes.length * .85));
-
-  clusterBrands.forEach((brands, clusterId) => {
-    const rankedBrands = [...brands].sort((first, second) => {
-      const firstImportance = (first.isParentBrand ? 1000000 : 0) + (!first.parentId ? 100000 : 0) + getStableBrandScore(first.label);
-      const secondImportance = (second.isParentBrand ? 1000000 : 0) + (!second.parentId ? 100000 : 0) + getStableBrandScore(second.label);
-      return secondImportance - firstImportance;
-    });
-    const overviewCount = overviewQuotas.get(clusterId);
-    const mediumCount = mediumQuotas.get(clusterId);
-
-    rankedBrands.forEach((node, index) => {
-      node.visibilityTier = index < overviewCount ? 0 : index < mediumCount ? 1 : 2;
-    });
+  nodes.filter(node => node.clusterId).forEach(node => {
+    node.visibilityTier = node.portfolioSize === 'S' ? 2 : 0;
   });
 }
 
@@ -1174,13 +1363,24 @@ function addWrappedLabel(group, node) {
   });
 
   const lines = getWrappedLabelLines(node.label, node.font);
+  const lineHeight = getNodeLineHeight(node);
 
   lines.forEach((line, index) => {
-    const tspan = createSvgElement('tspan', { x: node.x, dy: index === 0 ? 0 : 10 });
+    const tspan = createSvgElement('tspan', { x: node.x, dy: index === 0 ? 0 : lineHeight });
     tspan.textContent = line;
     text.appendChild(tspan);
   });
   group.appendChild(text);
+}
+
+function getNodeLineHeight(node) {
+  return node.portfolioSize === 'S'
+    ? 8
+    : node.portfolioSize === 'M'
+      ? 9
+      : node.portfolioSize === 'L'
+        ? 13
+        : 10;
 }
 
 const nonBreakingLabelWords = new Set([
@@ -1667,7 +1867,11 @@ function setNodePosition(node, point) {
   label.setAttribute('y', point.y + node.r + (node.id === 'root' ? 23 : 15));
   label.removeAttribute('transform');
   delete label.dataset.collisionTransform;
-  label.querySelectorAll('tspan').forEach(tspan => tspan.setAttribute('x', point.x));
+  const lineHeight = getNodeLineHeight(node);
+  label.querySelectorAll('tspan').forEach((tspan, index) => {
+    tspan.setAttribute('x', point.x);
+    tspan.setAttribute('dy', index === 0 ? 0 : lineHeight);
+  });
 }
 
 function applyDisplayModeLayout() {
@@ -1723,7 +1927,7 @@ function showHoverLogo(node) {
   const isCompactLogo = node.label === 'N1';
   const logoSize = node.label === 'Вебнефть'
     ? { x: 16, y: 59.9, width: 104, height: 16.1 }
-    : node.label === 'Корпоративный университет'
+    : node.label.startsWith('Корпоративный университет')
       ? { x: 16, y: 53.2, width: 104, height: 29.5 }
       : null;
   const cardX = Math.min(Math.max(node.x - 68, 4), 1022);
@@ -1751,7 +1955,7 @@ function hideHoverLogo() {
 }
 
 function resolveLabelCollisions() {
-  const padding = 3;
+  const padding = 4;
   const margin = 6;
   const bounds = { width: 1162, height: 960 };
   const labels = [...document.querySelectorAll('.node-group .node-label')]
@@ -1767,7 +1971,9 @@ function resolveLabelCollisions() {
   }
   const placed = ['objects', 'spheres', 'brand-clusters'].includes(displayMode)
     ? [...document.querySelectorAll(`.${displayMode === 'objects' ? 'object' : displayMode === 'spheres' ? 'sphere' : 'brand-cluster'}-category-label`)].map(label => label.getBBox())
-    : [];
+    : [...document.querySelectorAll('.node-group .node-label')]
+      .filter(label => (nodeById.get(label.parentElement.dataset.id)?.font || 0) >= 12)
+      .map(label => label.getBBox());
 
   const intersects = (first, second) => (
     first.x < second.x + second.width + padding
@@ -1781,23 +1987,16 @@ function resolveLabelCollisions() {
     const maximumShiftX = bounds.width - margin - item.box.x - item.box.width;
     let position = null;
 
-    const candidateOffsets = [
-      [0, 0], [0, 6], [0, -6],
-      [8, 0], [-8, 0], [8, 6], [-8, 6], [8, -6], [-8, -6],
-      [0, 12], [0, -12], [14, 0], [-14, 0],
-      [14, 8], [-14, 8], [14, -8], [-14, -8],
-      [0, 18], [0, -18]
-    ];
-    if (displayMode === 'objects') {
-      candidateOffsets.splice(-2, 0,
-        [22, 0], [-22, 0],
-        [22, 6], [-22, 6], [22, -6], [-22, -6],
-        [22, 12], [-22, 12], [22, -12], [-22, -12],
-        [30, 0], [-30, 0],
-        [30, 6], [-30, 6], [30, -6], [-30, -6],
-        [30, 12], [-30, 12], [30, -12], [-30, -12]
-      );
-    }
+    const candidateOffsets = [[0, 0]];
+    [8, 16, 24, 32, 40, 48, 56, 64].forEach(distance => {
+      candidateOffsets.push([distance, 0], [-distance, 0]);
+    });
+    [6, -6, 12, -12, 18, -18, 24, -24].forEach(shiftY => {
+      candidateOffsets.push([0, shiftY]);
+      [10, 20, 30, 40, 50].forEach(shiftX => {
+        candidateOffsets.push([shiftX, shiftY], [-shiftX, shiftY]);
+      });
+    });
     for (const [shiftX, shiftY] of candidateOffsets) {
       const constrainedShiftX = Math.max(minimumShiftX, Math.min(shiftX, maximumShiftX));
       const candidate = {
@@ -1954,7 +2153,7 @@ function updateZoomButtons() {
 }
 
 function updateBrandVisibility(zoom) {
-  const visibleTier = !semanticZoomToggle.checked ? 2 : zoom >= 1.8 ? 2 : zoom >= 1.3 ? 1 : 0;
+  const visibleTier = !semanticZoomToggle.checked || zoom >= 1.3 ? 2 : 0;
 
   document.querySelectorAll('.node-group[data-visibility-tier]').forEach(group => {
     const isSelected = group.classList.contains('is-active') || group.classList.contains('is-connected');
@@ -2277,9 +2476,12 @@ const brandLogoFiles = {
   'Полиом': 'assets/poliom.png',
   'G-Energy': 'assets/g-energy.png',
   'Drive Café': 'assets/drive-cafe.png',
+  'Drive Cafe': 'assets/drive-cafe.png',
   'SYNTOLUX': 'assets/syntolux.png',
+  'Syntolux': 'assets/syntolux.png',
   'Вебнефть': 'assets/webneft.svg',
   'StartupDrive': 'assets/startup-drive.png',
+  'Startup Drive': 'assets/startup-drive.png',
   'G-Drive': 'assets/g-drive.png',
   'DDA': 'assets/dda.png',
   'Consta': 'assets/consta.png',
@@ -2288,39 +2490,50 @@ const brandLogoFiles = {
   'АКПО': 'assets/akpo.png',
   'Линкон': 'assets/lincon.png',
   'iSource': 'assets/isource.png',
+  'Isource': 'assets/isource.png',
   'Виджет Линк': 'assets/widget.png',
   'Энерготехнофест': 'assets/energytechnofest.png',
   'Инсайт': 'assets/insight.png',
   'Брендлист': 'assets/brandlist.png',
   'Нефтегазета': 'assets/neftegazeta.png',
   'Арктика Медиа': 'assets/arctic-media.png',
+  'Арктика медиа': 'assets/arctic-media.png',
   'Тюмень 1': 'assets/tyumen.png',
   'Ямал 1': 'assets/yamal.png',
   'Родные города': 'assets/rodnye-goroda.png',
   'Волонтёры Газпром нефти': 'assets/volunteers.png',
   'Умножая таланты': 'assets/umnozhaya-talanty.png',
+  'Умножаем таланты': 'assets/umnozhaya-talanty.png',
   'Грантовый конкурс «Газпром нефти»': 'assets/grant-contest.png',
+  'Грантовый конкурс Газпромнефти': 'assets/grant-contest.png',
   'Музыкальная мастерская Юрия Розума': 'assets/music-workshop.png',
   'Родные музеи': 'assets/rodnye-museums.png',
   'Кустендорф КЛАССИК': 'assets/kustendorf.png',
+  'Kustendorf Classic': 'assets/kustendorf.png',
   'Дни Эрмитажа в Сербии': 'assets/hermitage-days.png',
   'Математическая прогрессия': 'assets/math-progression.png',
   'ШТОРМ': 'assets/storm.png',
+  'Шторм': 'assets/storm.png',
   'Салым Петролеум': 'assets/salym.png',
+  'Салам Петролеум Девелопмент': 'assets/salym.png',
   'Актив будущего': 'assets/aktiv-budushego.png',
   'Геобазис': 'assets/geobasis.png',
   'КЕДР': 'assets/kedr.png',
+  'Кедр': 'assets/kedr.png',
   'Мессояханефтегаз': 'assets/messoyakha.png',
   'Южно-Приобский ГПЗ': 'assets/yuzhno-pri.png',
   'Геонавигатор': 'assets/geonavigator.png',
   'Геосфера': 'assets/geosphere.png',
   'INDUSTRIX': 'assets/industrix.png',
+  'Industrix': 'assets/industrix.png',
   'Меретояханефтегаз': 'assets/meretoyakha.png',
   'Эталон': 'assets/etalon.png',
   'Цифраториум': 'assets/ciferhaus.png',
+  'Цифергауз': 'assets/ciferhaus.png',
   'G-Drive Арена': 'assets/g-drive-arena.png',
   'Экспертные решения': 'assets/expert-solutions.png',
   'Корпоративный университет': 'assets/corporate-university.svg',
+  'Корпоративный университет Газпром нефти': 'assets/corporate-university.svg',
   'Promine': 'assets/promine.png'
 };
 

@@ -341,7 +341,14 @@ button { font: inherit; }
 .node-group:focus { outline: none; }
 .node-group:focus-visible .node-dot { filter: drop-shadow(0 0 0.8px #fff) drop-shadow(0 0 2px #006aa8); }
 .node-group .node-dot { transition: r 140ms ease, filter 140ms ease, opacity 140ms ease; }
-.node-group .node-label { transition: opacity 140ms ease, font-weight 140ms ease; user-select: none; }
+.node-group .node-label {
+  paint-order: stroke fill;
+  stroke: #f7f9fa;
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  transition: opacity 140ms ease, font-weight 140ms ease;
+  user-select: none;
+}
 .node-group:hover .node-dot, .node-group.is-active .node-dot { r: var(--node-hover-radius, 7px); filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
 .node-group:hover .node-label, .node-group.is-active .node-label { font-weight: 600; }
 .hover-logo-layer { pointer-events: none; }
@@ -367,7 +374,13 @@ button { font: inherit; }
 .object-category-group, .sphere-category-group, .brand-cluster-category-group { cursor: pointer; transition: opacity 140ms ease; }
 .object-category-group:focus, .sphere-category-group:focus, .brand-cluster-category-group:focus { outline: none; }
 .object-category-dot, .sphere-category-dot, .brand-cluster-category-dot { transition: r 140ms ease, opacity 140ms ease, filter 140ms ease; }
-.object-category-label, .sphere-category-label, .brand-cluster-category-label { user-select: none; }
+.object-category-label, .sphere-category-label, .brand-cluster-category-label {
+  paint-order: stroke fill;
+  stroke: #f7f9fa;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  user-select: none;
+}
 .object-category-group:hover .object-category-dot,
 .object-category-group.is-active .object-category-dot,
 .sphere-category-group:hover .sphere-category-dot,
