@@ -1387,7 +1387,7 @@ function getNodeLineHeight(node) {
   return node.portfolioSize === 'S'
     ? 8
     : node.portfolioSize === 'M'
-      ? 9
+      ? 10
       : node.portfolioSize === 'L'
         ? 13
         : 10;
