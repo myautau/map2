@@ -883,13 +883,16 @@ function addClusterNodes(cluster) {
 }
 
 function addNestedClusterBrands(cluster, topLevelBrands) {
-  const totalWeight = topLevelBrands.reduce((sum, brand) => sum + Math.max(1, brand.children.length + 1), 0);
+  const getBrandWeight = brand => brand.label === 'Арктика медиа'
+    ? 5.5
+    : Math.max(1, brand.children.length + 1);
+  const totalWeight = topLevelBrands.reduce((sum, brand) => sum + getBrandWeight(brand), 0);
   const availableAngle = cluster.sectorEnd - cluster.sectorStart;
   let angleCursor = cluster.sectorStart;
   const directBrandIndexes = { L: 0, M: 0, S: 0 };
 
   topLevelBrands.forEach((brand, topLevelIndex) => {
-    const brandWeight = Math.max(1, brand.children.length + 1);
+    const brandWeight = getBrandWeight(brand);
     const sliceSize = availableAngle * brandWeight / totalWeight;
     const sliceStart = angleCursor;
     const sliceEnd = angleCursor + sliceSize;
@@ -902,7 +905,9 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
       S: [410, 452]
     };
     const sizeRadii = directBrandRadii[size] || directBrandRadii.M;
-    const radius = isParentBrand ? 250 : sizeRadii[directBrandIndexes[size] % sizeRadii.length];
+    const radius = isParentBrand
+      ? brand.label === 'Арктика медиа' ? 270 : 250
+      : sizeRadii[directBrandIndexes[size] % sizeRadii.length];
     const point = polarPoint(rootNode.x, rootNode.y, radius, angle);
     const scaleStyle = getBrandScaleStyle(brand.size);
     const id = isParentBrand
@@ -934,7 +939,10 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
       const childRings = getRingCounts(brand.children.length);
       let childIndex = 0;
       childRings.forEach((count, ringIndex) => {
-        const radius = childRings.length === 1 ? 382 : 318 + ringIndex * 62;
+        const isArcticMedia = brand.label === 'Арктика медиа';
+        const radius = isArcticMedia
+          ? 420
+          : childRings.length === 1 ? 382 : 318 + ringIndex * 62;
         const inset = Math.min(1.5, sliceSize * .08);
         const start = sliceStart + inset;
         const end = sliceEnd - inset;
@@ -947,7 +955,9 @@ function addNestedClusterBrands(cluster, topLevelBrands) {
           const ringPhase = ringIndex % 2 === 0 ? 0.42 : 0.68;
           const childAngle = count === 1 ? angle : start + (index + ringPhase) * step;
           const childRadiusOffset = childRings.length === 1 && count > 1
-            ? (index % 2 === 0 ? -18 : 28)
+            ? isArcticMedia
+              ? (index % 2 === 0 ? -28 : 36)
+              : (index % 2 === 0 ? -18 : 28)
             : 0;
           const childPoint = polarPoint(rootNode.x, rootNode.y, radius + childRadiusOffset, childAngle);
           const childId = `${id}-child-${childIndex}`;
